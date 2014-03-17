@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.text.NumberFormat;
 
 public class Inspector {
 
@@ -63,21 +64,21 @@ public class Inspector {
 							|| Modifier.isProtected(field.getModifiers()))
 						field.setAccessible(true);
 
-					System.out.println(field.getType());
-					
-					if (field.getType().equals("int"))
+					String fieldType = field.getType().toString();
+
+					if (fieldType.equals("int"))
 						field.set(object, Integer.parseInt(arguments[2]));
-					else if (field.getType().equals("float"))
+					else if (fieldType.equals("float"))
 						field.set(object, Float.parseFloat(arguments[2]));
-					else if (field.getType().equals("double"))
+					else if (fieldType.equals("double"))
 						field.set(object, Double.parseDouble(arguments[2]));
-					else if (field.getType().equals("long"))
+					else if (fieldType.equals("long"))
 						field.set(object, Long.parseLong(arguments[2]));
-					else if (field.getType().equals("byte"))
+					else if (fieldType.equals("byte"))
 						field.set(object, Byte.parseByte(arguments[2]));
-					else if (field.getType().equals("short"))
+					else if (fieldType.equals("short"))
 						field.set(object, Short.parseShort(arguments[2]));
-					else if (field.getType().equals("boolean"))
+					else if (fieldType.equals("boolean"))
 						field.set(object, Boolean.parseBoolean(arguments[2]));
 					else
 						field.set(object, arguments[2]);
@@ -91,20 +92,37 @@ public class Inspector {
 
 							Object result;
 
-							if (arguments.length - 2 == 0)
-								result = method.invoke(object, null);
+							if (arguments.length - 2 == 0) {
+
+								result = method.invoke(myObject, null);
+							}
 
 							else {
+
 								Object[] methodArgs = new Object[arguments.length - 2];
-								for (int i = 0; i < arguments.length; i++)
+								for (int i = 0; i < arguments.length - 2; i++) {
 									methodArgs[i] = arguments[i + 2];
 
-								result = method.invoke(object, methodArgs);
+									Integer.parseInt(arguments[2]);
+									//to be continued...
+
+								}
+								
+								
+
+								// for (Class<?> c : method.getParameterTypes())
+								// {
+								// System.out.println(c);
+								// }
+
+								result = method.invoke(myObject, methodArgs);
 
 							}
 
-							if (result != null)
+							if (result != null) {
 								myObject = result;
+								inspect(myObject);
+							}
 
 							break;
 						}
@@ -223,5 +241,7 @@ public class Inspector {
 			System.out.println("Superclasse: "
 					+ object.getClass().getSuperclass().getName());
 	}
+
+
 
 }
