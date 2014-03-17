@@ -13,13 +13,19 @@ import java.text.NumberFormat;
 
 public class Inspector {
 
+	private InfoPrinter infoPrinter;
+	private TypeMatcher matcher;
+
 	public Inspector() {
+
+		infoPrinter = new InfoPrinter();
+		matcher = new TypeMatcher();
 
 	}
 
 	public void inspect(Object object) {
 
-		printInspectionInfo(object);
+		infoPrinter.printInspectionInfo(object);
 
 		readEvalPrint(object);
 	}
@@ -44,8 +50,6 @@ public class Inspector {
 					Field field = myObject.getClass().getDeclaredField(
 							arguments[1]);
 
-					// for (Field f : myObject.getClass().getDeclaredFields()) {
-
 					if (Modifier.isPrivate(field.getModifiers())
 							|| Modifier.isProtected(field.getModifiers()))
 						field.setAccessible(true);
@@ -53,7 +57,7 @@ public class Inspector {
 					myObject = field.get(object);
 
 					if (myObject != null)
-						printInspectionInfo(myObject);
+						infoPrinter.printInspectionInfo(myObject);
 
 				} else if (arguments[0].equals("m")) {
 
@@ -67,23 +71,23 @@ public class Inspector {
 					String fieldType = field.getType().toString();
 
 					if (fieldType.equals("int"))
-						field.set(object, Integer.parseInt(arguments[2]));
+						field.set(object, matcher.IntegerMatch(arguments[2]));
 					else if (fieldType.equals("float"))
-						field.set(object, Float.parseFloat(arguments[2]));
+						field.set(object, matcher.FloatMatch(arguments[2]));
 					else if (fieldType.equals("double"))
-						field.set(object, Double.parseDouble(arguments[2]));
+						field.set(object, matcher.DoubleMatch(arguments[2]));
 					else if (fieldType.equals("long"))
-						field.set(object, Long.parseLong(arguments[2]));
+						field.set(object, matcher.LongMatch(arguments[2]));
 					else if (fieldType.equals("byte"))
-						field.set(object, Byte.parseByte(arguments[2]));
+						field.set(object, matcher.ByteMatch(arguments[2]));
 					else if (fieldType.equals("short"))
-						field.set(object, Short.parseShort(arguments[2]));
+						field.set(object, matcher.ShortMatch(arguments[2]));
 					else if (fieldType.equals("boolean"))
-						field.set(object, Boolean.parseBoolean(arguments[2]));
+						field.set(object, matcher.BooleanMatch(arguments[2]));
 					else
 						field.set(object, arguments[2]);
 
-					printInspectionInfo(myObject);
+					infoPrinter.printInspectionInfo(myObject);
 
 				} else if (arguments[0].equals("c")) {
 
@@ -100,20 +104,10 @@ public class Inspector {
 							else {
 
 								Object[] methodArgs = new Object[arguments.length - 2];
-								for (int i = 0; i < arguments.length - 2; i++) {
-									methodArgs[i] = arguments[i + 2];
 
-									Integer.parseInt(arguments[2]);
-									//to be continued...
-
-								}
-								
-								
-
-								// for (Class<?> c : method.getParameterTypes())
-								// {
-								// System.out.println(c);
-								// }
+								for (int i = 0; i < arguments.length - 2; i++)
+									methodArgs[i] = matcher
+											.getBestMatch(arguments[i + 2]);
 
 								result = method.invoke(myObject, methodArgs);
 
@@ -154,94 +148,5 @@ public class Inspector {
 		}
 
 	}
-
-	private void printInspectionInfo(Object object) {
-
-		System.out.println(object + " is an instance of " + object.getClass());
-		System.out.println("----------");
-
-		printFieldsInfo(object.getClass().getDeclaredFields(), object);
-		System.out.println("----------");
-
-		printAnnotationsInfo(object.getClass().getAnnotations());
-		printConstructorsInfo(object.getClass().getConstructors());
-		printInterfacesInfo(object.getClass().getInterfaces());
-		printMethodsInfo(object.getClass().getDeclaredMethods());
-		printSuperclassesInfo(object);
-
-	}
-
-	private void printFieldsInfo(Field[] fields, Object object) {
-
-		for (Field field : fields) {
-			if (Modifier.isPrivate(field.getModifiers())
-					|| Modifier.isProtected(field.getModifiers())
-					|| Modifier.isStatic(field.getModifiers()))
-				field.setAccessible(true);
-			try {
-				System.out
-						.println(field.toString() + " = " + field.get(object));
-			} catch (IllegalArgumentException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} catch (IllegalAccessException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-
-		}
-
-	}
-
-	private void printAnnotationsInfo(Annotation[] annotations) {
-
-		System.out.print("Annotations: ");
-
-		for (Annotation anot : annotations)
-			System.out.print(anot.toString() + "; ");
-
-		System.out.println();
-
-	}
-
-	private void printConstructorsInfo(Constructor<?>[] constructors) {
-
-		System.out.print("Constructors: ");
-
-		for (Constructor<?> constructor : constructors)
-			System.out.print(constructor.toString() + "; ");
-
-		System.out.println();
-
-	}
-
-	private void printInterfacesInfo(Class<?>[] interfaces) {
-
-		System.out.print("Interfaces: ");
-
-		for (Class<?> interf : interfaces)
-			System.out.print(interf.toString() + "; ");
-
-		System.out.println();
-	}
-
-	private void printMethodsInfo(Method[] methods) {
-
-		System.out.print("Methods: ");
-
-		for (Method m : methods)
-			System.out.print(m.toString() + "; ");
-
-		System.out.println();
-
-	}
-
-	private void printSuperclassesInfo(Object object) {
-		if (object.getClass().getSuperclass() != null)
-			System.out.println("Superclasse: "
-					+ object.getClass().getSuperclass().getName());
-	}
-
-
 
 }
