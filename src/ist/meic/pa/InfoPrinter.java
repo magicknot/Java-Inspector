@@ -7,9 +7,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class InfoPrinter {
-	
-	
+
 	public void printInspectionInfo(Object object) {
+
+		if (object == null)
+			return;
 
 		System.err.println(object + " is an instance of " + object.getClass());
 		System.err.println("----------");
@@ -95,7 +97,5 @@ public class InfoPrinter {
 			System.err.println("Superclasse: "
 					+ object.getClass().getSuperclass().getName());
 	}
-
-	
 
 }
