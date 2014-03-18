@@ -20,7 +20,7 @@ public class HistoryGraph {
 		
 		this.objects.add(object);
 		historyPointer++;
-		System.out.println("ADD " + historyPointer);
+		System.err.println("ADD " + historyPointer);
 		
 	}
 

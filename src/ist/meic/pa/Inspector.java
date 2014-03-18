@@ -19,30 +19,26 @@ public class Inspector {
 	private SavedObjects savedObjects;
 
 	public Inspector() {
-
 		infoPrinter = new InfoPrinter();
 		matcher = new TypeMatcher();
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
-
 	}
 
 	public void inspect(Object object) {
-
 		infoPrinter.printInspectionInfo(object);
 		historyGraph.addToHistory(object);
 		readEvalPrint(object);
 	}
 
 	public void readEvalPrint(Object object) {
-
 		BufferedReader buffer = new BufferedReader(new InputStreamReader(
 				System.in));
 		Object myObject = object;
 
 		while (true) {
 
-			System.out.print("> ");
+			System.err.print("> ");
 
 			try {
 				String arguments[] = buffer.readLine().split(" ");
@@ -50,7 +46,7 @@ public class Inspector {
 				if (arguments[0].equals("q")) {
 					return;
 				} else if (arguments[0].equals("i")) {
-					System.out.println("I");
+					System.err.println("I");
 
 					Field field = myObject.getClass().getDeclaredField(
 							arguments[1]);
@@ -66,7 +62,7 @@ public class Inspector {
 						infoPrinter.printInspectionInfo(myObject);
 
 				} else if (arguments[0].equals("m")) {
-					System.out.println("M");
+					System.err.println("M");
 
 					Field field = myObject.getClass().getDeclaredField(
 							arguments[1]);
@@ -97,7 +93,7 @@ public class Inspector {
 					infoPrinter.printInspectionInfo(myObject);
 
 				} else if (arguments[0].equals("c")) {
-					System.out.println("C");
+					System.err.println("C");
 
 					for (Method method : object.getClass().getMethods()) {
 						if (method.getName().equals(arguments[1])) {
@@ -158,12 +154,12 @@ public class Inspector {
 					}
 
 				} else if (arguments[0].equals("n")) {
-					System.out.println("N");
+					System.err.println("N");
 					myObject = historyGraph.getNext();
 					infoPrinter.printInspectionInfo(myObject);
 
 				} else if (arguments[0].equals("p")) {
-					System.out.println("P");
+					System.err.println("P");
 					myObject = historyGraph.getPrevious();
 					infoPrinter.printInspectionInfo(myObject);
 				} else if (arguments[0].equals("s")) {
