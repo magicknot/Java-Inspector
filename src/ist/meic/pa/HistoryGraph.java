@@ -7,27 +7,40 @@ public class HistoryGraph {
 	ArrayList<Object> objects;
 	int historyPointer;
 
+	public HistoryGraph() {
+		objects = new ArrayList<Object>();
+		historyPointer = -1;
+	}
+
 	public ArrayList<Object> getObjects() {
 		return objects;
 	}
 
-	public void addToHistory(ArrayList<Object> objects) {
-		this.objects = objects;
+	public void addToHistory(Object object) {
+		
+		this.objects.add(object);
+		historyPointer++;
+		System.out.println("ADD " + historyPointer);
+		
 	}
 
 	public Object getNext() {
-		if (historyPointer < objects.size())
-			return objects.get(historyPointer++);
+		
+		if (historyPointer < objects.size()-1)
+			return objects.get(++historyPointer);
 		else
-			return null;
+			return objects.get(historyPointer);
+		
+		
 
 	}
 
 	public Object getPrevious() {
+		
 		if (historyPointer > 0)
-			return objects.get(historyPointer--);
+			return objects.get(--historyPointer);
 		else
-			return null;
+			return objects.get(historyPointer);
 
 	}
 

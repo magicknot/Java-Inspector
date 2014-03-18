@@ -15,18 +15,20 @@ public class Inspector {
 
 	private InfoPrinter infoPrinter;
 	private TypeMatcher matcher;
+	private HistoryGraph historyGraph;
 
 	public Inspector() {
 
 		infoPrinter = new InfoPrinter();
 		matcher = new TypeMatcher();
+		historyGraph = new HistoryGraph();
 
 	}
 
 	public void inspect(Object object) {
 
 		infoPrinter.printInspectionInfo(object);
-
+		historyGraph.addToHistory(object);
 		readEvalPrint(object);
 	}
 
@@ -35,6 +37,7 @@ public class Inspector {
 		BufferedReader buffer = new BufferedReader(new InputStreamReader(
 				System.in));
 		Object myObject = object;
+		
 
 		while (true) {
 
@@ -46,6 +49,7 @@ public class Inspector {
 				if (arguments[0].equals("q")) {
 					return;
 				} else if (arguments[0].equals("i")) {
+					System.out.println("I");
 
 					Field field = myObject.getClass().getDeclaredField(
 							arguments[1]);
@@ -55,11 +59,13 @@ public class Inspector {
 						field.setAccessible(true);
 
 					myObject = field.get(object);
+					historyGraph.addToHistory(myObject);
 
 					if (myObject != null)
 						infoPrinter.printInspectionInfo(myObject);
 
 				} else if (arguments[0].equals("m")) {
+					System.out.println("M");
 
 					Field field = myObject.getClass().getDeclaredField(
 							arguments[1]);
@@ -90,6 +96,7 @@ public class Inspector {
 					infoPrinter.printInspectionInfo(myObject);
 
 				} else if (arguments[0].equals("c")) {
+					System.out.println("C");
 
 					for (Method method : object.getClass().getMethods()) {
 						if (method.getName().equals(arguments[1])) {
@@ -115,7 +122,8 @@ public class Inspector {
 
 							if (result != null) {
 								myObject = result;
-								inspect(myObject);
+								historyGraph.addToHistory(myObject);
+								infoPrinter.printInspectionInfo(myObject);
 							}
 
 							break;
@@ -123,6 +131,15 @@ public class Inspector {
 
 					}
 
+				} else if (arguments[0].equals("n")) {
+					System.out.println("N");
+					myObject = historyGraph.getNext();
+					infoPrinter.printInspectionInfo(myObject);
+
+				} else if (arguments[0].equals("p")) {
+					System.out.println("P");
+					myObject = historyGraph.getPrevious();
+					infoPrinter.printInspectionInfo(myObject);
 				}
 
 			} catch (IOException e) {
