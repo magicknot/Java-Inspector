@@ -16,12 +16,14 @@ public class Inspector {
 	private InfoPrinter infoPrinter;
 	private TypeMatcher matcher;
 	private HistoryGraph historyGraph;
+	private SavedObjects savedObjects;
 
 	public Inspector() {
 
 		infoPrinter = new InfoPrinter();
 		matcher = new TypeMatcher();
 		historyGraph = new HistoryGraph();
+		savedObjects = new SavedObjects();
 
 	}
 
@@ -37,7 +39,6 @@ public class Inspector {
 		BufferedReader buffer = new BufferedReader(new InputStreamReader(
 				System.in));
 		Object myObject = object;
-		
 
 		while (true) {
 
@@ -110,14 +111,39 @@ public class Inspector {
 
 							else {
 
-								Object[] methodArgs = new Object[arguments.length - 2];
+								int numGets = 0;
+								for (int i = 0; i < arguments.length - 2; i++) {
+									if (arguments[i + 2].equals("#get")) {
+										numGets++;
+									}
+								}
 
-								for (int i = 0; i < arguments.length - 2; i++)
-									methodArgs[i] = matcher
-											.getBestMatch(arguments[i + 2]);
+								Object[] methodArgs;
+								if (numGets > 0) {
+									methodArgs = new Object[arguments.length
+											- numGets - 2];
+
+								} else {
+									methodArgs = new Object[arguments.length - 2];
+								}
+
+								for (int i = 0; i < arguments.length - 2; i++) {
+
+									if (arguments[i + 2].equals("#get")) {
+
+										methodArgs[i] = savedObjects
+												.getObject(arguments[i + 3]);
+										// incrementa o i para saltar para a
+										// posicao a seguir ao nome da variavel
+										i++;
+
+									} else {
+										methodArgs[i] = matcher
+												.getBestMatch(arguments[i + 2]);
+									}
+								}
 
 								result = method.invoke(myObject, methodArgs);
-
 							}
 
 							if (result != null) {
@@ -140,6 +166,14 @@ public class Inspector {
 					System.out.println("P");
 					myObject = historyGraph.getPrevious();
 					infoPrinter.printInspectionInfo(myObject);
+				} else if (arguments[0].equals("s")) {
+					System.out.println("S");
+					savedObjects.saveObject(arguments[1], myObject);
+				} else if (arguments[0].equals("g")) {
+					System.out.println("G");
+					myObject = savedObjects.getObject(arguments[1]);
+					if (myObject != null)
+						infoPrinter.printInspectionInfo(myObject);
 				}
 
 			} catch (IOException e) {
@@ -165,5 +199,4 @@ public class Inspector {
 		}
 
 	}
-
 }
