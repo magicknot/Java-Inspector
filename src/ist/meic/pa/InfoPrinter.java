@@ -11,11 +11,11 @@ public class InfoPrinter {
 	
 	public void printInspectionInfo(Object object) {
 
-		System.out.println(object + " is an instance of " + object.getClass());
-		System.out.println("----------");
+		System.err.println(object + " is an instance of " + object.getClass());
+		System.err.println("----------");
 
 		printFieldsInfo(object.getClass().getDeclaredFields(), object);
-		System.out.println("----------");
+		System.err.println("----------");
 
 		printAnnotationsInfo(object.getClass().getAnnotations());
 		printConstructorsInfo(object.getClass().getConstructors());
@@ -33,7 +33,7 @@ public class InfoPrinter {
 					|| Modifier.isStatic(field.getModifiers()))
 				field.setAccessible(true);
 			try {
-				System.out
+				System.err
 						.println(field.toString() + " = " + field.get(object));
 			} catch (IllegalArgumentException e1) {
 				// TODO Auto-generated catch block
@@ -49,50 +49,50 @@ public class InfoPrinter {
 
 	private void printAnnotationsInfo(Annotation[] annotations) {
 
-		System.out.print("Annotations: ");
+		System.err.print("Annotations: ");
 
 		for (Annotation anot : annotations)
-			System.out.print(anot.toString() + "; ");
+			System.err.print(anot.toString() + "; ");
 
-		System.out.println();
+		System.err.println();
 
 	}
 
 	private void printConstructorsInfo(Constructor<?>[] constructors) {
 
-		System.out.print("Constructors: ");
+		System.err.print("Constructors: ");
 
 		for (Constructor<?> constructor : constructors)
-			System.out.print(constructor.toString() + "; ");
+			System.err.print(constructor.toString() + "; ");
 
-		System.out.println();
+		System.err.println();
 
 	}
 
 	private void printInterfacesInfo(Class<?>[] interfaces) {
 
-		System.out.print("Interfaces: ");
+		System.err.print("Interfaces: ");
 
 		for (Class<?> interf : interfaces)
-			System.out.print(interf.toString() + "; ");
+			System.err.print(interf.toString() + "; ");
 
-		System.out.println();
+		System.err.println();
 	}
 
 	private void printMethodsInfo(Method[] methods) {
 
-		System.out.print("Methods: ");
+		System.err.print("Methods: ");
 
 		for (Method m : methods)
-			System.out.print(m.toString() + "; ");
+			System.err.print(m.toString() + "; ");
 
-		System.out.println();
+		System.err.println();
 
 	}
 
 	private void printSuperclassesInfo(Object object) {
 		if (object.getClass().getSuperclass() != null)
-			System.out.println("Superclasse: "
+			System.err.println("Superclasse: "
 					+ object.getClass().getSuperclass().getName());
 	}
 
