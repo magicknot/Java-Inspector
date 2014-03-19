@@ -9,9 +9,10 @@ import java.lang.reflect.Modifier;
 public class InfoPrinter {
 	
 	public static void printInspectionInfo(Object object) {
-		if (object == null)
+		if (object == null) {
 			return;
-
+		}
+		
 		System.err.println(object + " is an instance of " + object.getClass());
 		System.err.println("----------");
 

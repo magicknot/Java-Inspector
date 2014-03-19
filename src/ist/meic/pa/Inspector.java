@@ -22,20 +22,16 @@ import java.util.ArrayList;
  * Ultimo ponto extra
  * Perceber o porque de os modificadores necessarios nao
  * serem sempre no mesmo numero
- *  
- *  
  */
 
 public class Inspector {
 
-	private InfoPrinter infoPrinter;
 	private TypeMatcher matcher;
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
 	private Object myObject;
 
 	public Inspector() {
-		infoPrinter = new InfoPrinter();
 		matcher = new TypeMatcher();
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
@@ -44,7 +40,7 @@ public class Inspector {
 
 	public void inspect(Object object) {
 		myObject = object;
-		infoPrinter.printInspectionInfo(object);
+		InfoPrinter.printInspectionInfo(object);
 		historyGraph.addToHistory(object);
 		readEvalPrint();
 	}
@@ -54,7 +50,6 @@ public class Inspector {
 				System.in));
 
 		while (true) {
-
 			System.err.print("> ");
 
 			try {
@@ -75,9 +70,8 @@ public class Inspector {
 				} else if (arguments[0].equals("s")) {
 					sCommand(arguments[1]);
 				} else if (arguments[0].equals("g")) {
-
+					// FIXME
 				}
-
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -97,9 +91,7 @@ public class Inspector {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
-
 	}
 
 	public void iCommand(String arg) throws SecurityException,
@@ -114,8 +106,7 @@ public class Inspector {
 
 		myObject = field.get(myObject);
 		historyGraph.addToHistory(myObject);
-		infoPrinter.printInspectionInfo(myObject);
-
+		InfoPrinter.printInspectionInfo(myObject);
 	}
 
 	public void mCommand(String arg1, String arg2)
@@ -147,8 +138,7 @@ public class Inspector {
 		else
 			field.set(myObject, arg2);
 
-		infoPrinter.printInspectionInfo(myObject);
-
+		InfoPrinter.printInspectionInfo(myObject);
 	}
 
 	public void cCommand(String args[]) throws IllegalArgumentException,
@@ -189,20 +179,18 @@ public class Inspector {
 
 			myObject = result;
 			historyGraph.addToHistory(myObject);
-			infoPrinter.printInspectionInfo(myObject);
-
+			InfoPrinter.printInspectionInfo(myObject);
 		}
-
 	}
 
 	public void nCommand() {
 		myObject = historyGraph.getNext();
-		infoPrinter.printInspectionInfo(myObject);
+		InfoPrinter.printInspectionInfo(myObject);
 	}
 
 	public void pCommand() {
 		myObject = historyGraph.getPrevious();
-		infoPrinter.printInspectionInfo(myObject);
+		InfoPrinter.printInspectionInfo(myObject);
 	}
 
 	public void sCommand(String arg) {
@@ -211,7 +199,7 @@ public class Inspector {
 
 	public void gCommand(String arg) {
 		myObject = savedObjects.getObject(arg);
-		infoPrinter.printInspectionInfo(myObject);
+		InfoPrinter.printInspectionInfo(myObject);
 	}
 
 }
