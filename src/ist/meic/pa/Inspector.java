@@ -139,6 +139,7 @@ public class Inspector {
 			IllegalAccessException, InvocationTargetException {
 
 		Object[] methodArgs = new Object[args.length - 2];
+		Class<?> myClass;
 
 		for (int i = 0; i < args.length - 2; i++) {
 			if (args[i + 2].startsWith("#")) {
@@ -148,15 +149,24 @@ public class Inspector {
 				methodArgs[i] = getBestMatch(args[i + 2]);
 			}
 		}
-
-		for (Method m : myObject.getClass().getMethods()) {
-			if (m.getName().equals(args[1]) && hasCompatibleArgs(m, methodArgs)) {
-				myObject = m.invoke(myObject, methodArgs);
-				historyGraph.addToHistory(myObject);
-				InfoPrinter.printInspectionInfo(myObject);
-				break;
+		
+		//TODO verificar se e´ null?
+		
+		//verifica partindo da classe actual, passando depois `as superclasses se há algum metodo com o mesmo nome
+		myClass = myObject.getClass();
+		
+		while (!myClass.isInstance(Object.class)) {
+			
+			
+			for (Method m : myClass.getMethods()) {
+				if (m.getName().equals(args[1]) && hasCompatibleArgs(m, methodArgs)) {
+					myObject = m.invoke(myObject, methodArgs);
+					historyGraph.addToHistory(myObject);
+					InfoPrinter.printInspectionInfo(myObject);
+					return;
+				}
 			}
-
+			myClass = myClass.getSuperclass();
 		}
 	}
 

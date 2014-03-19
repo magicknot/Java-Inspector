@@ -7,12 +7,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class InfoPrinter {
-	
+
 	public static void printInspectionInfo(Object object) {
 		if (object == null) {
 			return;
 		}
-		
+
 		System.err.println(object + " is an instance of " + object.getClass());
 		System.err.println("----------");
 
@@ -33,8 +33,21 @@ public class InfoPrinter {
 					|| Modifier.isStatic(field.getModifiers()))
 				field.setAccessible(true);
 			try {
-				System.err
-						.println(field.toString() + " = " + field.get(object));
+				/*if (field.get(object) != null
+						&& field.get(object).getClass().isArray()) {
+
+					System.err.print(field.toString() + " = ");
+
+					for (Object obj : (int[]) field.get(object)) {
+						System.err.print(obj + " ");
+					}
+					// print a new line
+					System.err.println("");
+
+				} else {*/
+					System.err.println(field.toString() + " = "
+							+ field.get(object));
+				//}
 			} catch (IllegalArgumentException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -47,7 +60,7 @@ public class InfoPrinter {
 
 	private static void printAnnotationsInfo(Annotation[] annotations) {
 		System.err.print("Annotations: ");
-		
+
 		if (annotations.length < 1) {
 			System.err.print("there are no annotations.");
 		}
@@ -55,7 +68,7 @@ public class InfoPrinter {
 		for (Annotation annotation : annotations) {
 			System.err.print(annotation.toString() + "; ");
 		}
-		
+
 		System.err.println();
 	}
 
@@ -65,13 +78,12 @@ public class InfoPrinter {
 		for (Constructor<?> constructor : constructors) {
 			System.err.print(constructor.toString() + "; ");
 		}
-		
+
 		System.err.println();
 	}
 
 	private static void printInterfacesInfo(Class<?>[] interfaces) {
 		System.err.print("Interfaces: ");
-		
 
 		if (interfaces.length < 1) {
 			System.err.print("there are no interfaces.");
@@ -80,7 +92,7 @@ public class InfoPrinter {
 		for (Class<?> interf : interfaces) {
 			System.err.print(interf.toString() + "; ");
 		}
-		
+
 		System.err.println();
 	}
 
@@ -90,7 +102,7 @@ public class InfoPrinter {
 		for (Method m : methods) {
 			System.err.print(m.toString() + "; ");
 		}
-		
+
 		System.err.println();
 	}
 
