@@ -154,45 +154,38 @@ public class Inspector {
 	public void cCommand(String args[]) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException {
 
-		Object result;
-		ArrayList<Method> methods = new ArrayList<Method>();
-		Method selectedMethod = null;
+		Object[] methodArgs = new Object[args.length - 2];
+
+		for (int i = 0; i < args.length - 2; i++) {
+			if (args[i + 2].startsWith("#")) {
+				methodArgs[i] = savedObjects
+						.getObject(args[i + 2].substring(1));
+			} else {
+				methodArgs[i] = matcher.getBestMatch(args[i + 2]);
+			}
+		}
 
 		for (Method m : myObject.getClass().getMethods()) {
-			if (m.getName().equals(args[1])) {
-				methods.add(m);
+			if (m.getName().equals(args[1]) && hasCompatibleArgs(m, methodArgs)) {
+				myObject = m.invoke(myObject, methodArgs);
+				historyGraph.addToHistory(myObject);
+				infoPrinter.printInspectionInfo(myObject);
+				break;
 			}
+		}
+	}
 
-			if (methods.size() > 1) {
-				// to be continued...
-				// pensar se n�o vale a pena ter s� uma vari�vel metodo
-				// comparar e perceber se vale a pena substituir
-			} else
-				selectedMethod = methods.get(0);
+	public boolean hasCompatibleArgs(Method m, Object args[]) {
 
-			if (args.length - 2 == 0) {
-				result = selectedMethod.invoke(myObject, null);
-			} else {
-				Object[] methodArgs = new Object[args.length - 2];
-
-				for (int i = 0; i < args.length - 2; i++) {
-					if (args[i + 2].startsWith("#")) {
-						methodArgs[i] = savedObjects.getObject(args[i + 2]
-								.substring(1));
-					} else {
-						methodArgs[i] = matcher.getBestMatch(args[i + 2]);
-					}
-				}
-
-				result = selectedMethod.invoke(myObject, methodArgs);
+		for (int i = 0; i < args.length; i++) {
+			if (!m.getParameterTypes()[i].getName().equals(
+					args[i].getClass().getName())) {
+				return false;
 			}
-
-			myObject = result;
-			historyGraph.addToHistory(myObject);
-			infoPrinter.printInspectionInfo(myObject);
 
 		}
 
+		return m.getParameterTypes().length == args.length;
 	}
 
 	public void nCommand() {
