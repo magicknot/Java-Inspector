@@ -8,9 +8,7 @@ import java.lang.reflect.Modifier;
 
 public class InfoPrinter {
 	
-	
-	public void printInspectionInfo(Object object) {
-
+	public static void printInspectionInfo(Object object) {
 		System.err.println(object + " is an instance of " + object.getClass());
 		System.err.println("----------");
 
@@ -21,12 +19,10 @@ public class InfoPrinter {
 		printConstructorsInfo(object.getClass().getConstructors());
 		printInterfacesInfo(object.getClass().getInterfaces());
 		printMethodsInfo(object.getClass().getDeclaredMethods());
-		printSuperclassesInfo(object);
-
+		printSuperClassesInfo(object);
 	}
 
-	private void printFieldsInfo(Field[] fields, Object object) {
-
+	private static void printFieldsInfo(Field[] fields, Object object) {
 		for (Field field : fields) {
 			if (Modifier.isPrivate(field.getModifiers())
 					|| Modifier.isProtected(field.getModifiers())
@@ -42,60 +38,62 @@ public class InfoPrinter {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+		}
+	}
 
+	private static void printAnnotationsInfo(Annotation[] annotations) {
+		System.err.print("Annotations: ");
+		
+		if (annotations.length < 1) {
+			System.err.print("there are no annotations.");
 		}
 
-	}
-
-	private void printAnnotationsInfo(Annotation[] annotations) {
-
-		System.err.print("Annotations: ");
-
-		for (Annotation anot : annotations)
-			System.err.print(anot.toString() + "; ");
-
+		for (Annotation annotation : annotations) {
+			System.err.print(annotation.toString() + "; ");
+		}
+		
 		System.err.println();
-
 	}
 
-	private void printConstructorsInfo(Constructor<?>[] constructors) {
-
+	private static void printConstructorsInfo(Constructor<?>[] constructors) {
 		System.err.print("Constructors: ");
 
-		for (Constructor<?> constructor : constructors)
+		for (Constructor<?> constructor : constructors) {
 			System.err.print(constructor.toString() + "; ");
-
+		}
+		
 		System.err.println();
-
 	}
 
-	private void printInterfacesInfo(Class<?>[] interfaces) {
-
+	private static void printInterfacesInfo(Class<?>[] interfaces) {
 		System.err.print("Interfaces: ");
+		
 
-		for (Class<?> interf : interfaces)
+		if (interfaces.length < 1) {
+			System.err.print("there are no interfaces.");
+		}
+
+		for (Class<?> interf : interfaces) {
 			System.err.print(interf.toString() + "; ");
-
+		}
+		
 		System.err.println();
 	}
 
-	private void printMethodsInfo(Method[] methods) {
-
+	private static void printMethodsInfo(Method[] methods) {
 		System.err.print("Methods: ");
 
-		for (Method m : methods)
+		for (Method m : methods) {
 			System.err.print(m.toString() + "; ");
-
+		}
+		
 		System.err.println();
-
 	}
 
-	private void printSuperclassesInfo(Object object) {
-		if (object.getClass().getSuperclass() != null)
+	private static void printSuperClassesInfo(Object object) {
+		if (object.getClass().getSuperclass() != null) {
 			System.err.println("Superclasse: "
 					+ object.getClass().getSuperclass().getName());
+		}
 	}
-
-	
-
 }

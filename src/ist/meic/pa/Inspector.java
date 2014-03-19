@@ -35,7 +35,6 @@ public class Inspector {
 		Object myObject = object;
 
 		while (true) {
-
 			System.err.print("> ");
 
 			try {
@@ -45,20 +44,19 @@ public class Inspector {
 					return;
 				} else if (arguments[0].equals("i")) {
 					System.err.println("I");
-
-					Field field = myObject.getClass().getDeclaredField(
-							arguments[1]);
+					Field field = myObject.getClass().getDeclaredField(arguments[1]);
 
 					if (Modifier.isPrivate(field.getModifiers())
-							|| Modifier.isProtected(field.getModifiers()))
+							|| Modifier.isProtected(field.getModifiers())) {
 						field.setAccessible(true);
+					}
 
 					myObject = field.get(object);
 					historyGraph.addToHistory(myObject);
 
-					if (myObject != null)
+					if (myObject != null) {
 						infoPrinter.printInspectionInfo(myObject);
-
+					}
 				} else if (arguments[0].equals("m")) {
 					System.err.println("M");
 
@@ -66,27 +64,29 @@ public class Inspector {
 							arguments[1]);
 
 					if (Modifier.isPrivate(field.getModifiers())
-							|| Modifier.isProtected(field.getModifiers()))
+							|| Modifier.isProtected(field.getModifiers())) {
 						field.setAccessible(true);
+					}
 
 					String fieldType = field.getType().toString();
 
-					if (fieldType.equals("int"))
+					if (fieldType.equals("int")) {
 						field.set(object, matcher.IntegerMatch(arguments[2]));
-					else if (fieldType.equals("float"))
+					} else if (fieldType.equals("float")) {
 						field.set(object, matcher.FloatMatch(arguments[2]));
-					else if (fieldType.equals("double"))
+					} else if (fieldType.equals("double")) {
 						field.set(object, matcher.DoubleMatch(arguments[2]));
-					else if (fieldType.equals("long"))
+					} else if (fieldType.equals("long")) {
 						field.set(object, matcher.LongMatch(arguments[2]));
-					else if (fieldType.equals("byte"))
+					} else if (fieldType.equals("byte")) {
 						field.set(object, matcher.ByteMatch(arguments[2]));
-					else if (fieldType.equals("short"))
+					} else if (fieldType.equals("short")) {
 						field.set(object, matcher.ShortMatch(arguments[2]));
-					else if (fieldType.equals("boolean"))
+					} else if (fieldType.equals("boolean")) {
 						field.set(object, matcher.BooleanMatch(arguments[2]));
-					else
+					} else {
 						field.set(object, arguments[2]);
+					}
 
 					infoPrinter.printInspectionInfo(myObject);
 
@@ -95,24 +95,18 @@ public class Inspector {
 
 					for (Method method : object.getClass().getMethods()) {
 						if (method.getName().equals(arguments[1])) {
-
 							Object result;
 
 							if (arguments.length - 2 == 0) {
-
 								result = method.invoke(myObject, null);
-							}
-
-							else {
-
+							} else {
 								Object[] methodArgs = new Object[arguments.length - 2];
 
-								for (int i = 0; i < arguments.length - 2; i++)
-									methodArgs[i] = matcher
-											.getBestMatch(arguments[i + 2]);
+								for (int i = 0; i < arguments.length - 2; i++) {
+									methodArgs[i] = matcher.getBestMatch(arguments[i + 2]);
+								}
 
 								result = method.invoke(myObject, methodArgs);
-
 							}
 
 							if (result != null) {
@@ -123,14 +117,12 @@ public class Inspector {
 
 							break;
 						}
-
 					}
 
 				} else if (arguments[0].equals("n")) {
 					System.err.println("N");
 					myObject = historyGraph.getNext();
 					infoPrinter.printInspectionInfo(myObject);
-
 				} else if (arguments[0].equals("p")) {
 					System.err.println("P");
 					myObject = historyGraph.getPrevious();
@@ -156,9 +148,6 @@ public class Inspector {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
-
 	}
-
 }

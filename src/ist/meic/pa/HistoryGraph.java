@@ -17,31 +17,24 @@ public class HistoryGraph {
 	}
 
 	public void addToHistory(Object object) {
-		
 		this.objects.add(object);
 		historyPointer++;
 		System.err.println("ADD " + historyPointer);
-		
 	}
 
 	public Object getNext() {
-		
-		if (historyPointer < objects.size()-1)
+		if (historyPointer < objects.size() - 1) {
 			return objects.get(++historyPointer);
-		else
+		} else {
 			return objects.get(historyPointer);
-		
-		
-
+		}
 	}
 
 	public Object getPrevious() {
-		
-		if (historyPointer > 0)
+		if (historyPointer > 0) {
 			return objects.get(--historyPointer);
-		else
+		} else {
 			return objects.get(historyPointer);
-
+		}
 	}
-
 }

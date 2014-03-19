@@ -6,23 +6,24 @@ import java.lang.reflect.Method;
 public class TypeMatcher {
 
 	public TypeMatcher() {
-
+		// Nothing to do here...
 	}
 
 	public Object getBestMatch(String s) {
-
 		Object result = null;
 
 		try {
-
 			for (Method m : this.getClass().getDeclaredMethods()) {
-
-				if (m.getName().equals("getBestMatch"))
+				if (m.getName().equals("getBestMatch")) {
 					continue;
-				else if (result == null)
+				}
+
+				try {
 					result = m.invoke(this, s);
-				else
 					return result;
+				} catch (NumberFormatException e) {
+					continue;
+				}
 			}
 
 		} catch (IllegalArgumentException e) {
@@ -37,73 +38,33 @@ public class TypeMatcher {
 		}
 
 		return s;
-
 	}
 
-	public Object IntegerMatch(String arg) {
-
-		try {
-			return Integer.parseInt(arg);
-		} catch (NumberFormatException e) {
-			return null;
-		}
-
+	public Object IntegerMatch(String arg) throws NumberFormatException {
+		return Integer.parseInt(arg);
 	}
 
-	public Object FloatMatch(String arg) {
-
-		try {
-			return Float.parseFloat(arg);
-		} catch (NumberFormatException e) {
-			return null;
-		}
-
+	public Object FloatMatch(String arg) throws NumberFormatException {
+		return Float.parseFloat(arg);
 	}
 
-	public Object DoubleMatch(String arg) {
-
-		try {
-			return Double.parseDouble(arg);
-		} catch (NumberFormatException e) {
-			return null;
-		}
+	public Object DoubleMatch(String arg) throws NumberFormatException {
+		return Double.parseDouble(arg);
 	}
 
-	public Object LongMatch(String arg) {
-
-		try {
-			return Long.parseLong(arg);
-		} catch (NumberFormatException e) {
-			return null;
-		}
+	public Object LongMatch(String arg) throws NumberFormatException {
+		return Long.parseLong(arg);
 	}
 
-	public Object ByteMatch(String arg) {
-
-		try {
-			return Byte.parseByte(arg);
-		} catch (NumberFormatException e) {
-			return null;
-		}
+	public Object ByteMatch(String arg) throws NumberFormatException {
+		return Byte.parseByte(arg);
 	}
 
-	public Object ShortMatch(String arg) {
-
-		try {
-			return Short.parseShort(arg);
-		} catch (NumberFormatException e) {
-			return null;
-		}
+	public Object ShortMatch(String arg) throws NumberFormatException {
+		return Short.parseShort(arg);
 	}
 
-	public Object BooleanMatch(String arg) {
-
-		try {
-			return Boolean.parseBoolean(arg);
-		} catch (NumberFormatException e) {
-			return null;
-		}
-
+	public Object BooleanMatch(String arg) throws NumberFormatException {
+		return Boolean.parseBoolean(arg);
 	}
-
 }
