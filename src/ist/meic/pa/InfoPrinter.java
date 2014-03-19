@@ -1,6 +1,7 @@
 package ist.meic.pa;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -33,21 +34,22 @@ public class InfoPrinter {
 					|| Modifier.isStatic(field.getModifiers()))
 				field.setAccessible(true);
 			try {
-				/*if (field.get(object) != null
+				if (field.get(object) != null
 						&& field.get(object).getClass().isArray()) {
 
-					System.err.print(field.toString() + " = ");
+					System.err.print(field.toString() + " = [ ");
 
-					for (Object obj : (int[]) field.get(object)) {
-						System.err.print(obj + " ");
+					for (int i = 0; i < Array.getLength(field.get(object)); i++) {
+						System.err.print(Array.get(field.get(object), i) + " ");
 					}
+					System.err.print("]");
 					// print a new line
 					System.err.println("");
 
-				} else {*/
+				} else {
 					System.err.println(field.toString() + " = "
 							+ field.get(object));
-				//}
+				}
 			} catch (IllegalArgumentException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
