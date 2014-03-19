@@ -1,5 +1,6 @@
 package a;
 
 public class C extends B {
-	//Nothing to do here
+	private int a = 2;
+	private String e = "shadow sub";
 }

@@ -34,13 +34,14 @@ public class InfoPrinter {
 					|| Modifier.isStatic(field.getModifiers()))
 				field.setAccessible(true);
 			try {
-				if (field.get(object) != null
-						&& field.get(object).getClass().isArray()) {
+				Object fieldObj = field.get(object);
+
+				if (fieldObj != null && fieldObj.getClass().isArray()) {
 
 					System.err.print(field.toString() + " = [ ");
 
-					for (int i = 0; i < Array.getLength(field.get(object)); i++) {
-						System.err.print(Array.get(field.get(object), i) + " ");
+					for (int i = 0; i < Array.getLength(fieldObj); i++) {
+						System.err.print(Array.get(fieldObj, i) + " ");
 					}
 					System.err.print("]");
 					// print a new line
