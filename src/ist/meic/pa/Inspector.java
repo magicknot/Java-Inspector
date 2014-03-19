@@ -26,7 +26,6 @@ import java.util.ArrayList;
  *  
  */
 
-
 public class Inspector {
 
 	private InfoPrinter infoPrinter;
@@ -44,6 +43,7 @@ public class Inspector {
 	}
 
 	public void inspect(Object object) {
+		myObject = object;
 		infoPrinter.printInspectionInfo(object);
 		historyGraph.addToHistory(object);
 		readEvalPrint();
@@ -165,7 +165,7 @@ public class Inspector {
 
 			if (methods.size() > 1) {
 				// to be continued...
-				// pensar se não vale a pena ter só uma variável metodo
+				// pensar se nï¿½o vale a pena ter sï¿½ uma variï¿½vel metodo
 				// comparar e perceber se vale a pena substituir
 			} else
 				selectedMethod = methods.get(0);
