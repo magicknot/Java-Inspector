@@ -29,17 +29,17 @@ public class Inspector {
 	private TypeMatcher matcher;
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
-	private Object myObject;
+	private Object object;
 
 	public Inspector() {
 		matcher = new TypeMatcher();
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
-		myObject = null;
+		object = null;
 	}
 
 	public void inspect(Object object) {
-		myObject = object;
+		this.object = object;
 		InfoPrinter.printInspectionInfo(object);
 		historyGraph.addToHistory(object);
 		readEvalPrint();
@@ -56,19 +56,20 @@ public class Inspector {
 				String arguments[] = buffer.readLine().split(" ");
 
 				if (arguments[0].equals("q")) {
+					buffer.close();
 					return;
 				} else if (arguments[0].equals("i")) {
-					iCommand(arguments[1]);
+					inspect(arguments[1]);
 				} else if (arguments[0].equals("m")) {
-					mCommand(arguments[1], arguments[2]);
+					modify(arguments[1], arguments[2]);
 				} else if (arguments[0].equals("c")) {
-					cCommand(arguments);
+					call(arguments);
 				} else if (arguments[0].equals("n")) {
-					nCommand();
+					next();
 				} else if (arguments[0].equals("p")) {
-					pCommand();
+					previous();
 				} else if (arguments[0].equals("s")) {
-					sCommand(arguments[1]);
+					save(arguments[1]);
 				} else if (arguments[0].equals("g")) {
 					// FIXME
 				}
@@ -94,61 +95,64 @@ public class Inspector {
 		}
 	}
 
-	public void iCommand(String arg) throws SecurityException,
+	private void inspect(String arg) throws SecurityException,
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException {
 
-		Field field = myObject.getClass().getDeclaredField(arg);
+		Field field = object.getClass().getDeclaredField(arg);
 
 		if (Modifier.isPrivate(field.getModifiers())
-				|| Modifier.isProtected(field.getModifiers()))
+				|| Modifier.isProtected(field.getModifiers())) {
 			field.setAccessible(true);
+		}
 
-		myObject = field.get(myObject);
-		historyGraph.addToHistory(myObject);
-		InfoPrinter.printInspectionInfo(myObject);
+		object = field.get(object);
+		historyGraph.addToHistory(object);
+		InfoPrinter.printInspectionInfo(object);
 	}
 
-	public void mCommand(String arg1, String arg2)
+	private void modify(String name, String value)
 			throws IllegalArgumentException, IllegalAccessException,
 			SecurityException, NoSuchFieldException {
 
-		Field field = myObject.getClass().getDeclaredField(arg1);
+		Field field = object.getClass().getDeclaredField(name);
 
 		if (Modifier.isPrivate(field.getModifiers())
-				|| Modifier.isProtected(field.getModifiers()))
+				|| Modifier.isProtected(field.getModifiers())) {
 			field.setAccessible(true);
+		}
 
-		String fieldType = field.getType().toString();
+		String type = field.getType().toString();
 
-		if (fieldType.equals("int"))
-			field.set(myObject, matcher.IntegerMatch(arg2));
-		else if (fieldType.equals("float"))
-			field.set(myObject, matcher.FloatMatch(arg2));
-		else if (fieldType.equals("double"))
-			field.set(myObject, matcher.DoubleMatch(arg2));
-		else if (fieldType.equals("long"))
-			field.set(myObject, matcher.LongMatch(arg2));
-		else if (fieldType.equals("byte"))
-			field.set(myObject, matcher.ByteMatch(arg2));
-		else if (fieldType.equals("short"))
-			field.set(myObject, matcher.ShortMatch(arg2));
-		else if (fieldType.equals("boolean"))
-			field.set(myObject, matcher.BooleanMatch(arg2));
-		else
-			field.set(myObject, arg2);
+		if (type.equals("int")) {
+			field.set(object, matcher.IntegerMatch(value));
+		} else if (type.equals("float")) {
+			field.set(object, matcher.FloatMatch(value));
+		} else if (type.equals("double")) {
+			field.set(object, matcher.DoubleMatch(value));
+		} else if (type.equals("long")) {
+			field.set(object, matcher.LongMatch(value));
+		} else if (type.equals("byte")) {
+			field.set(object, matcher.ByteMatch(value));
+		} else if (type.equals("short")) {
+			field.set(object, matcher.ShortMatch(value));
+		} else if (type.equals("boolean")) {
+			field.set(object, matcher.BooleanMatch(value));
+		} else {
+			field.set(object, value);
+		}
 
-		InfoPrinter.printInspectionInfo(myObject);
+		InfoPrinter.printInspectionInfo(object);
 	}
 
-	public void cCommand(String args[]) throws IllegalArgumentException,
+	private void call(String args[]) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException {
 
-		Object result;
 		ArrayList<Method> methods = new ArrayList<Method>();
 		Method selectedMethod = null;
+		Object result;
 
-		for (Method m : myObject.getClass().getMethods()) {
+		for (Method m : object.getClass().getMethods()) {
 			if (m.getName().equals(args[1])) {
 				methods.add(m);
 			}
@@ -157,11 +161,12 @@ public class Inspector {
 				// to be continued...
 				// pensar se n�o vale a pena ter s� uma vari�vel metodo
 				// comparar e perceber se vale a pena substituir
-			} else
+			} else {
 				selectedMethod = methods.get(0);
-
+			}
+			
 			if (args.length - 2 == 0) {
-				result = selectedMethod.invoke(myObject, null);
+				result = selectedMethod.invoke(object, null);
 			} else {
 				Object[] methodArgs = new Object[args.length - 2];
 
@@ -174,32 +179,31 @@ public class Inspector {
 					}
 				}
 
-				result = selectedMethod.invoke(myObject, methodArgs);
+				result = selectedMethod.invoke(object, methodArgs);
 			}
 
-			myObject = result;
-			historyGraph.addToHistory(myObject);
-			InfoPrinter.printInspectionInfo(myObject);
+			object = result;
+			historyGraph.addToHistory(object);
+			InfoPrinter.printInspectionInfo(object);
 		}
 	}
 
-	public void nCommand() {
-		myObject = historyGraph.getNext();
-		InfoPrinter.printInspectionInfo(myObject);
+	private void next() {
+		object = historyGraph.getNext();
+		InfoPrinter.printInspectionInfo(object);
 	}
 
-	public void pCommand() {
-		myObject = historyGraph.getPrevious();
-		InfoPrinter.printInspectionInfo(myObject);
+	private void previous() {
+		object = historyGraph.getPrevious();
+		InfoPrinter.printInspectionInfo(object);
 	}
 
-	public void sCommand(String arg) {
-		savedObjects.saveObject(arg, myObject);
+	private void save(String arg) {
+		savedObjects.saveObject(arg, object);
 	}
 
-	public void gCommand(String arg) {
-		myObject = savedObjects.getObject(arg);
-		InfoPrinter.printInspectionInfo(myObject);
+	private void get(String arg) {
+		object = savedObjects.getObject(arg);
+		InfoPrinter.printInspectionInfo(object);
 	}
-
 }

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 public class HistoryGraph {
 
-	ArrayList<Object> objects;
-	int historyPointer;
+	private ArrayList<Object> objects;
+	private int historyPointer;
 
 	public HistoryGraph() {
 		objects = new ArrayList<Object>();
