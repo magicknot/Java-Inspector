@@ -70,7 +70,7 @@ public class Inspector {
 				} else if (arguments[0].equals("s")) {
 					sCommand(arguments[1]);
 				} else if (arguments[0].equals("g")) {
-					// FIXME
+					gCommand(arguments[1]);
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -152,35 +152,35 @@ public class Inspector {
 			if (m.getName().equals(args[1])) {
 				methods.add(m);
 			}
+		}
 
-			if (methods.size() > 1) {
-				// to be continued...
-				// pensar se n�o vale a pena ter s� uma vari�vel metodo
-				// comparar e perceber se vale a pena substituir
-			} else
-				selectedMethod = methods.get(0);
+		if (methods.size() > 1) {
+			// to be continued...
+			// pensar se n�o vale a pena ter s� uma vari�vel metodo
+			// comparar e perceber se vale a pena substituir
+		} else
+			selectedMethod = methods.get(0);
 
-			if (args.length - 2 == 0) {
-				result = selectedMethod.invoke(myObject, null);
-			} else {
-				Object[] methodArgs = new Object[args.length - 2];
+		if (args.length - 2 == 0) {
+			result = selectedMethod.invoke(myObject, null);
+		} else {
+			Object[] methodArgs = new Object[args.length - 2];
 
-				for (int i = 0; i < args.length - 2; i++) {
-					if (args[i + 2].startsWith("#")) {
-						methodArgs[i] = savedObjects.getObject(args[i + 2]
-								.substring(1));
-					} else {
-						methodArgs[i] = matcher.getBestMatch(args[i + 2]);
-					}
+			for (int i = 0; i < args.length - 2; i++) {
+				if (args[i + 2].startsWith("#")) {
+					methodArgs[i] = savedObjects.getObject(args[i + 2]
+							.substring(1));
+				} else {
+					methodArgs[i] = matcher.getBestMatch(args[i + 2]);
 				}
-
-				result = selectedMethod.invoke(myObject, methodArgs);
 			}
 
-			myObject = result;
-			historyGraph.addToHistory(myObject);
-			InfoPrinter.printInspectionInfo(myObject);
+			result = selectedMethod.invoke(myObject, methodArgs);
 		}
+
+		myObject = result;
+		historyGraph.addToHistory(myObject);
+		InfoPrinter.printInspectionInfo(myObject);
 	}
 
 	public void nCommand() {
@@ -199,7 +199,9 @@ public class Inspector {
 
 	public void gCommand(String arg) {
 		myObject = savedObjects.getObject(arg);
-		InfoPrinter.printInspectionInfo(myObject);
+		if (myObject != null) {
+			InfoPrinter.printInspectionInfo(myObject);
+		}
 	}
 
 }
