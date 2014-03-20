@@ -3,7 +3,11 @@ package a;
 public class B {
 	private String c;
 	protected int d;
-	private int[] array = new int[]{1,2,3};
+	private int[] array = new int[] { 1, 2, 3 };
+
+	public void ola() {
+		System.out.println("ola sou um metodo da superclasse");
+	}
 }
 
 class E extends B {

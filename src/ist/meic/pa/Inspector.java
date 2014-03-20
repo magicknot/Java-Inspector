@@ -3,14 +3,10 @@ package ist.meic.pa;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.text.NumberFormat;
-import java.util.ArrayList;
 
 /*TODO getdeclaredmethod ou getmethod?
  * Adaptar o codigo para reconhecer objectos do tipo array
@@ -26,13 +22,11 @@ import java.util.ArrayList;
 
 public class Inspector {
 
-	private TypeMatcher matcher;
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
 	private Object object;
 
 	public Inspector() {
-		matcher = new TypeMatcher();
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
 		object = null;
@@ -71,7 +65,7 @@ public class Inspector {
 				} else if (arguments[0].equals("s")) {
 					save(arguments[1]);
 				} else if (arguments[0].equals("g")) {
-					// FIXME
+					gCommand(arguments[1]);
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -148,44 +142,69 @@ public class Inspector {
 	private void call(String args[]) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException {
 
-		ArrayList<Method> methods = new ArrayList<Method>();
-		Method selectedMethod = null;
-		Object result;
+		Object[] methodArgs = new Object[args.length - 2];
+		Class<?> myClass;
 
-		for (Method m : object.getClass().getMethods()) {
-			if (m.getName().equals(args[1])) {
-				methods.add(m);
-			}
-
-			if (methods.size() > 1) {
-				// to be continued...
-				// pensar se nï¿½o vale a pena ter sï¿½ uma variï¿½vel metodo
-				// comparar e perceber se vale a pena substituir
+		for (int i = 0; i < args.length - 2; i++) {
+			if (args[i + 2].startsWith("#")) {
+				methodArgs[i] = savedObjects
+						.getObject(args[i + 2].substring(1));
 			} else {
-				selectedMethod = methods.get(0);
+				methodArgs[i] = getBestMatch(args[i + 2]);
 			}
-			
-			if (args.length - 2 == 0) {
-				result = selectedMethod.invoke(object, null);
-			} else {
-				Object[] methodArgs = new Object[args.length - 2];
-
-				for (int i = 0; i < args.length - 2; i++) {
-					if (args[i + 2].startsWith("#")) {
-						methodArgs[i] = savedObjects.getObject(args[i + 2]
-								.substring(1));
-					} else {
-						methodArgs[i] = matcher.getBestMatch(args[i + 2]);
-					}
-				}
-
-				result = selectedMethod.invoke(object, methodArgs);
-			}
-
-			object = result;
-			historyGraph.addToHistory(object);
-			InfoPrinter.printInspectionInfo(object);
 		}
+		
+		//TODO verificar se e null?
+		
+		//verifica partindo da classe actual, passando depois `as superclasses se há algum metodo com o mesmo nome
+		myClass = myObject.getClass();
+		
+		while (!myClass.isInstance(Object.class)) {
+			for (Method m : myClass.getMethods()) {
+				if (m.getName().equals(args[1]) && hasCompatibleArgs(m, methodArgs)) {
+					myObject = m.invoke(myObject, methodArgs);
+					historyGraph.addToHistory(myObject);
+					InfoPrinter.printInspectionInfo(myObject);
+					return;
+				}
+			}
+			myClass = myClass.getSuperclass();
+		}
+	}
+    
+	public boolean hasCompatibleArgs(Method m, Object args[]) {
+		for (int i = 0; i < args.length; i++) {
+			if (!m.getParameterTypes()[i].getName().equals(
+					args[i].getClass().getName())) {
+				return false;
+			}
+		}
+
+		return m.getParameterTypes().length == args.length;
+	}
+
+	public static Object getBestMatch(String s) {
+		try {
+			for (Method m : TypeMatcher.class.getDeclaredMethods()) {
+				try {
+					return m.invoke(TypeMatcher.class, s);
+				} catch (NumberFormatException e) {
+					continue;
+				}
+			}
+
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return s;
 	}
 
 	private void next() {
@@ -204,6 +223,8 @@ public class Inspector {
 
 	private void get(String arg) {
 		object = savedObjects.getObject(arg);
-		InfoPrinter.printInspectionInfo(object);
+		if (object != null) {
+			InfoPrinter.printInspectionInfo(object);
+		}
 	}
 }
