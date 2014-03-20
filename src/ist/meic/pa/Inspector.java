@@ -66,6 +66,8 @@ public class Inspector {
 					save(arguments[1]);
 				} else if (arguments[0].equals("g")) {
 					gCommand(arguments[1]);
+				} else if (arguments[0].equals("x")) {
+					xCommand(arguments[1], arguments[2]);
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -103,6 +105,21 @@ public class Inspector {
 		object = field.get(object);
 		historyGraph.addToHistory(object);
 		InfoPrinter.printInspectionInfo(object);
+	}
+
+	private void xCommand(String arg1, String arg2) throws SecurityException,
+			NoSuchFieldException, IllegalArgumentException,
+			IllegalAccessException {
+
+		/*Field field = myObject.getClass().getDeclaredField(arg);
+
+		if (Modifier.isPrivate(field.getModifiers())
+				|| Modifier.isProtected(field.getModifiers()))
+			field.setAccessible(true);
+
+		myObject = field.get(myObject);
+		historyGraph.addToHistory(myObject);
+		InfoPrinter.printInspectionInfo(myObject);*/
 	}
 
 	private void modify(String name, String value)
@@ -153,15 +170,17 @@ public class Inspector {
 				methodArgs[i] = getBestMatch(args[i + 2]);
 			}
 		}
-		
-		//TODO verificar se e null?
-		
-		//verifica partindo da classe actual, passando depois `as superclasses se há algum metodo com o mesmo nome
+
+		// TODO verificar se e´ null?
+
+		// verifica partindo da classe actual, passando depois `as superclasses
+		// se há algum metodo com o mesmo nome
 		myClass = myObject.getClass();
-		
+
 		while (!myClass.isInstance(Object.class)) {
 			for (Method m : myClass.getMethods()) {
-				if (m.getName().equals(args[1]) && hasCompatibleArgs(m, methodArgs)) {
+				if (m.getName().equals(args[1])
+						&& hasCompatibleArgs(m, methodArgs)) {
 					myObject = m.invoke(myObject, methodArgs);
 					historyGraph.addToHistory(myObject);
 					InfoPrinter.printInspectionInfo(myObject);

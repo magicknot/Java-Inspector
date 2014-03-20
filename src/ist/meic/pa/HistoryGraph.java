@@ -17,12 +17,17 @@ public class HistoryGraph {
 	}
 
 	public void addToHistory(Object object) {
-		this.objects.add(object);
-		historyPointer++;
-		System.err.println("ADD " + historyPointer);
+		if (historyPointer == objects.size() -1) {
+			objects.add(object);
+			historyPointer++;
+		}else{
+			objects.remove(objects.size()-1);
+			addToHistory(object);
+		}
 	}
 
 	public Object getNext() {
+		//System.out.println("pointer " + historyPointer + " objects.size " + objects.size());
 		if (historyPointer < objects.size() - 1) {
 			return objects.get(++historyPointer);
 		} else {
