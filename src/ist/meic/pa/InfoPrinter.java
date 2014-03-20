@@ -14,7 +14,8 @@ public class InfoPrinter {
 			return;
 		}
 
-		System.err.println(object + " is an instance of " + object.getClass().getCanonicalName());
+		System.err.println(object + " is an instance of "
+				+ object.getClass().getCanonicalName());
 		System.err.println("----------");
 
 		printFieldsInfo(object.getClass().getDeclaredFields(), object);
@@ -29,10 +30,15 @@ public class InfoPrinter {
 
 	private static void printFieldsInfo(Field[] fields, Object object) {
 		for (Field field : fields) {
-			if (Modifier.isPrivate(field.getModifiers())
-					|| Modifier.isProtected(field.getModifiers())
-					|| Modifier.isStatic(field.getModifiers()))
-				field.setAccessible(true);
+
+			// don't print static variables
+			if (Modifier.isStatic(field.getModifiers())) {
+				continue;
+			}
+
+			Boolean fieldAccess = field.isAccessible();
+			field.setAccessible(true);
+
 			try {
 				Object fieldObj = field.get(object);
 
@@ -58,6 +64,8 @@ public class InfoPrinter {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+
+			field.setAccessible(fieldAccess);
 		}
 	}
 
@@ -114,5 +122,9 @@ public class InfoPrinter {
 			System.err.println("Superclasse: "
 					+ object.getClass().getSuperclass().getName());
 		}
+	}
+
+	private static void printMessageError(String s) {
+		System.err.println(s);
 	}
 }
