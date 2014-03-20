@@ -53,7 +53,11 @@ public class Inspector {
 					buffer.close();
 					return;
 				} else if (arguments[0].equals("i")) {
-					inspect(arguments[1]);
+					if (arguments.length < 3) {
+						inspect(arguments[1], 0);
+					} else {
+						inspect(arguments[1], Integer.parseInt(arguments[2]));
+					}
 				} else if (arguments[0].equals("m")) {
 					modify(arguments[1], arguments[2]);
 				} else if (arguments[0].equals("c")) {
@@ -65,9 +69,7 @@ public class Inspector {
 				} else if (arguments[0].equals("s")) {
 					save(arguments[1]);
 				} else if (arguments[0].equals("g")) {
-					gCommand(arguments[1]);
-				} else if (arguments[0].equals("x")) {
-					xCommand(arguments[1], arguments[2]);
+					get(arguments[1]);
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -87,15 +89,26 @@ public class Inspector {
 			} catch (InvocationTargetException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (InstantiationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
 
-	private void inspect(String arg) throws SecurityException,
+	private void inspect(String name, int value) throws SecurityException,
 			NoSuchFieldException, IllegalArgumentException,
-			IllegalAccessException {
+			IllegalAccessException, InstantiationException {
+		int i = 0;
 
-		Field field = object.getClass().getDeclaredField(arg);
+		if (value > 0) {
+			while (i != value) {
+				object = object.getClass().getSuperclass().newInstance();
+				i++;
+			}
+		}
+
+		Field field = object.getClass().getDeclaredField(name);
 
 		if (Modifier.isPrivate(field.getModifiers())
 				|| Modifier.isProtected(field.getModifiers())) {
@@ -105,21 +118,6 @@ public class Inspector {
 		object = field.get(object);
 		historyGraph.addToHistory(object);
 		InfoPrinter.printInspectionInfo(object);
-	}
-
-	private void xCommand(String arg1, String arg2) throws SecurityException,
-			NoSuchFieldException, IllegalArgumentException,
-			IllegalAccessException {
-
-		/*Field field = myObject.getClass().getDeclaredField(arg);
-
-		if (Modifier.isPrivate(field.getModifiers())
-				|| Modifier.isProtected(field.getModifiers()))
-			field.setAccessible(true);
-
-		myObject = field.get(myObject);
-		historyGraph.addToHistory(myObject);
-		InfoPrinter.printInspectionInfo(myObject);*/
 	}
 
 	private void modify(String name, String value)
@@ -136,19 +134,19 @@ public class Inspector {
 		String type = field.getType().toString();
 
 		if (type.equals("int")) {
-			field.set(object, matcher.IntegerMatch(value));
+			field.set(object, TypeMatcher.IntegerMatch(value));
 		} else if (type.equals("float")) {
-			field.set(object, matcher.FloatMatch(value));
+			field.set(object, TypeMatcher.FloatMatch(value));
 		} else if (type.equals("double")) {
-			field.set(object, matcher.DoubleMatch(value));
+			field.set(object, TypeMatcher.DoubleMatch(value));
 		} else if (type.equals("long")) {
-			field.set(object, matcher.LongMatch(value));
+			field.set(object, TypeMatcher.LongMatch(value));
 		} else if (type.equals("byte")) {
-			field.set(object, matcher.ByteMatch(value));
+			field.set(object, TypeMatcher.ByteMatch(value));
 		} else if (type.equals("short")) {
-			field.set(object, matcher.ShortMatch(value));
+			field.set(object, TypeMatcher.ShortMatch(value));
 		} else if (type.equals("boolean")) {
-			field.set(object, matcher.BooleanMatch(value));
+			field.set(object, TypeMatcher.BooleanMatch(value));
 		} else {
 			field.set(object, value);
 		}
@@ -171,26 +169,26 @@ public class Inspector {
 			}
 		}
 
-		// TODO verificar se e´ null?
+		// TODO verificar se eï¿½ null?
 
 		// verifica partindo da classe actual, passando depois `as superclasses
-		// se há algum metodo com o mesmo nome
-		myClass = myObject.getClass();
+		// se hï¿½ algum metodo com o mesmo nome
+		myClass = object.getClass();
 
 		while (!myClass.isInstance(Object.class)) {
 			for (Method m : myClass.getMethods()) {
 				if (m.getName().equals(args[1])
 						&& hasCompatibleArgs(m, methodArgs)) {
-					myObject = m.invoke(myObject, methodArgs);
-					historyGraph.addToHistory(myObject);
-					InfoPrinter.printInspectionInfo(myObject);
+					object = m.invoke(object, methodArgs);
+					historyGraph.addToHistory(object);
+					InfoPrinter.printInspectionInfo(object);
 					return;
 				}
 			}
 			myClass = myClass.getSuperclass();
 		}
 	}
-    
+
 	public boolean hasCompatibleArgs(Method m, Object args[]) {
 		for (int i = 0; i < args.length; i++) {
 			if (!m.getParameterTypes()[i].getName().equals(
