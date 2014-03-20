@@ -122,9 +122,7 @@ public class Inspector {
 		if (Modifier.isPrivate(field.getModifiers())
 				|| Modifier.isProtected(field.getModifiers()))
 			field.setAccessible(true);
-		
-		System.out.println(myClass);
-		
+
 		Object o;
 		try {
 			o = (Object) myClass.newInstance();
@@ -133,9 +131,6 @@ public class Inspector {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-
-		
-			
 
 		historyGraph.addToHistory(myObject);
 		InfoPrinter.printInspectionInfo(myObject);
@@ -209,7 +204,8 @@ public class Inspector {
 				myClass = myClass.getSuperclass();
 			}
 		} else {
-			//TODO Confirmar se nao sera melhor chamar algum metodo da classe InfoPrinter
+			// TODO Confirmar se nao sera melhor chamar algum metodo da classe
+			// InfoPrinter
 			System.err.println("the object is null");
 		}
 	}
