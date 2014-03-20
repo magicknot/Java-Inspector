@@ -10,10 +10,10 @@ public class Application {
 		B b = new B();
 		C c = new C();
 
-		new ist.meic.pa.Inspector().inspect(b);
+		//new ist.meic.pa.Inspector().inspect(b);
 
-		// para testa uso da superclasse
-		// new ist.meic.pa.Inspector().inspect(c);
+		// para testa uso da superclasse e/ou shadow
+		new ist.meic.pa.Inspector().inspect(c);
 
 	}
 

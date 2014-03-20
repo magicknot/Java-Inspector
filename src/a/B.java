@@ -2,6 +2,8 @@ package a;
 
 public class B {
 	private String c;
+	private String e = "shadow super";
+	private int a = 1;
 	protected int d;
 	private int[] array = new int[] { 1, 2, 3 };
 	private String[] arrayS = new String[]{"a", "b", "c"};

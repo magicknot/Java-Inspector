@@ -109,15 +109,36 @@ public class Inspector {
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException {
 
-		/*Field field = myObject.getClass().getDeclaredField(arg);
+		Class<?> myClass = myObject.getClass();
+		Integer numSuper = Integer.parseInt(arg2);
+
+		// percorre as superclasses ate´ chegar `a desejada
+		for (int i = 0; i < numSuper && !myClass.isInstance(Object.class); i++) {
+			myClass = myClass.getSuperclass();
+		}
+
+		Field field = myClass.getDeclaredField(arg1);
 
 		if (Modifier.isPrivate(field.getModifiers())
 				|| Modifier.isProtected(field.getModifiers()))
 			field.setAccessible(true);
+		
+		System.out.println(myClass);
+		
+		Object o;
+		try {
+			o = (Object) myClass.newInstance();
+			myObject = field.get(o);
+		} catch (InstantiationException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
-		myObject = field.get(myObject);
+		
+			
+
 		historyGraph.addToHistory(myObject);
-		InfoPrinter.printInspectionInfo(myObject);*/
+		InfoPrinter.printInspectionInfo(myObject);
 	}
 
 	public void mCommand(String arg1, String arg2)
@@ -158,33 +179,38 @@ public class Inspector {
 		Object[] methodArgs = new Object[args.length - 2];
 		Class<?> myClass;
 
-		for (int i = 0; i < args.length - 2; i++) {
-			if (args[i + 2].startsWith("#")) {
-				methodArgs[i] = savedObjects
-						.getObject(args[i + 2].substring(1));
-			} else {
-				methodArgs[i] = getBestMatch(args[i + 2]);
-			}
-		}
+		if (myObject != null) {
 
-		// TODO verificar se e´ null?
-
-		// verifica partindo da classe actual, passando depois `as superclasses
-		// se há algum metodo com o mesmo nome
-		myClass = myObject.getClass();
-
-		while (!myClass.isInstance(Object.class)) {
-
-			for (Method m : myClass.getMethods()) {
-				if (m.getName().equals(args[1])
-						&& hasCompatibleArgs(m, methodArgs)) {
-					myObject = m.invoke(myObject, methodArgs);
-					historyGraph.addToHistory(myObject);
-					InfoPrinter.printInspectionInfo(myObject);
-					return;
+			for (int i = 0; i < args.length - 2; i++) {
+				if (args[i + 2].startsWith("#")) {
+					methodArgs[i] = savedObjects.getObject(args[i + 2]
+							.substring(1));
+				} else {
+					methodArgs[i] = getBestMatch(args[i + 2]);
 				}
 			}
-			myClass = myClass.getSuperclass();
+
+			// verifica partindo da classe actual, passando depois `as
+			// superclasses
+			// se há algum metodo com o mesmo nome
+			myClass = myObject.getClass();
+
+			while (!myClass.isInstance(Object.class)) {
+
+				for (Method m : myClass.getMethods()) {
+					if (m.getName().equals(args[1])
+							&& hasCompatibleArgs(m, methodArgs)) {
+						myObject = m.invoke(myObject, methodArgs);
+						historyGraph.addToHistory(myObject);
+						InfoPrinter.printInspectionInfo(myObject);
+						return;
+					}
+				}
+				myClass = myClass.getSuperclass();
+			}
+		} else {
+			//TODO Confirmar se nao sera melhor chamar algum metodo da classe InfoPrinter
+			System.err.println("the object is null");
 		}
 	}
 
