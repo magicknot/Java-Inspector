@@ -197,7 +197,7 @@ public class Inspector {
 			}
 		} else {
 			InfoPrinter
-					.printInspectionInfo("cCommand: the object invocated does not exist");
+					.printObjectInfo("cCommand: the object invocated does not exist");
 		}
 	}
 
