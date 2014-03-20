@@ -187,7 +187,7 @@ public class Inspector {
 
 			// verifica partindo da classe actual, passando depois `as
 			// superclasses
-			// se há algum metodo com o mesmo nome
+			// se ha´ algum metodo com o mesmo nome
 			myClass = myObject.getClass();
 
 			while (!myClass.isInstance(Object.class)) {

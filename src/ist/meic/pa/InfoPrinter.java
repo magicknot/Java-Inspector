@@ -14,7 +14,7 @@ public class InfoPrinter {
 			return;
 		}
 
-		System.err.println(object + " is an instance of " + object.getClass());
+		System.err.println(object + " is an instance of " + object.getClass().getCanonicalName());
 		System.err.println("----------");
 
 		printFieldsInfo(object.getClass().getDeclaredFields(), object);
