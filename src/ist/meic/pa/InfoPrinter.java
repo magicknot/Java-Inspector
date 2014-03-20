@@ -9,17 +9,29 @@ import java.lang.reflect.Modifier;
 
 public class InfoPrinter {
 
-	public static void printInspectionInfo(Object object) {
-		if (object == null) {
-			return;
+	public static void printObjectInfo(Object object, Class<?> classType) {
+		System.out.println(classType);
+
+		if (classType.isPrimitive()) {
+			System.err.println(object + " is an instance of " + classType);
+			System.err.println("----------");
+			printStructureInfo(object);
+		} else {
+			printObjectInfo(object);
 		}
 
-		System.err.println(object + " is an instance of " + object.getClass().getCanonicalName());
-		System.err.println("----------");
+	}
 
+	public static void printObjectInfo(Object object) {
+		System.err.println(object + " is an instance of "
+				+ object.getClass().getCanonicalName());
+		System.err.println("----------");
+		printStructureInfo(object);
+
+	}
+
+	private static void printStructureInfo(Object object) {
 		printFieldsInfo(object.getClass().getDeclaredFields(), object);
-		System.err.println("----------");
-
 		printAnnotationsInfo(object.getClass().getAnnotations());
 		printConstructorsInfo(object.getClass().getConstructors());
 		printInterfacesInfo(object.getClass().getInterfaces());

@@ -7,20 +7,37 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-
-/*TODO getdeclaredmethod ou getmethod?
- * Adaptar o codigo para reconhecer objectos do tipo array
- * Adaptar o codigo para imprimir objectos do tipo array
- * Terminar a classe graph para eliminar caminhos antigos
- * Acabar command c, falta o caso em que existem varios
- * matches para o mesmo metodo
- * Verificar a sequencia dos metodos no typematcher
- * Ultimo ponto extra
- * Perceber o porque de os modificadores necessarios nao
- * serem sempre no mesmo numero
- */
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class Inspector {
+
+	public enum TypeMatches {
+		Integer, Double, Float, Long, String;
+
+		private static HashMap<Class<?>, Method> matches = new HashMap<Class<?>, Method>();
+
+		public static void init(String methodName, Class<?> wrapper,
+				Class<?> primitive) {
+			try {
+				matches.put(primitive,
+						wrapper.getMethod(methodName, java.lang.String.class));
+			} catch (SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (NoSuchMethodException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		public static Object parseObject(Class<?> c, Object obj)
+				throws IllegalArgumentException, IllegalAccessException,
+				InvocationTargetException {
+			return matches.get(c).invoke(c, obj);
+		}
+
+	}
 
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
@@ -30,11 +47,14 @@ public class Inspector {
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
 		object = null;
+		TypeMatches.init("parseInt", Integer.class, int.class);
+		TypeMatches.init("parseDouble", Double.class, double.class);
+		TypeMatches.init("parseFloat", Float.class, float.class);
+		TypeMatches.init("parseLong", Long.class, long.class);
 	}
 
 	public void inspect(Object object) {
-		this.object = object;
-		InfoPrinter.printInspectionInfo(object);
+		updateObject(object);
 		historyGraph.addToHistory(object);
 		readEvalPrint();
 	}
@@ -99,59 +119,45 @@ public class Inspector {
 	private void inspect(String name, int value) throws SecurityException,
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
-		int i = 0;
 
-		if (value > 0) {
-			while (i != value) {
-				object = object.getClass().getSuperclass().newInstance();
-				i++;
-			}
-		}
+		Object tempObject = object;
 
-		Field field = object.getClass().getDeclaredField(name);
+		for (int i = 0; i < value; i++)
+			tempObject = object.getClass().getSuperclass().newInstance();
 
-		if (Modifier.isPrivate(field.getModifiers())
-				|| Modifier.isProtected(field.getModifiers())) {
+		Field field = tempObject.getClass().getDeclaredField(name);
+
+		if (!Modifier.isStatic(field.getModifiers())) {
+			boolean originalAcess = field.isAccessible();
 			field.setAccessible(true);
+			updateObject(field.get(tempObject), field.getType());
+			historyGraph.addToHistory(object);
+			field.setAccessible(originalAcess);
+
 		}
 
-		object = field.get(object);
-		historyGraph.addToHistory(object);
-		InfoPrinter.printInspectionInfo(object);
 	}
 
 	private void modify(String name, String value)
 			throws IllegalArgumentException, IllegalAccessException,
-			SecurityException, NoSuchFieldException {
+			SecurityException, NoSuchFieldException, InvocationTargetException {
 
 		Field field = object.getClass().getDeclaredField(name);
 
-		if (Modifier.isPrivate(field.getModifiers())
-				|| Modifier.isProtected(field.getModifiers())) {
-			field.setAccessible(true);
+		boolean originalAcess = field.isAccessible();
+		field.setAccessible(true);
+
+		if (!Modifier.isStatic(field.getModifiers())) {
+			if (field.getType().isPrimitive())
+				field.set(object,
+						TypeMatches.parseObject(field.getType(), value));
+			else
+				field.set(object, value);
+
+			updateObject(object,field.getType());
+			field.setAccessible(originalAcess);
 		}
 
-		String type = field.getType().toString();
-
-		if (type.equals("int")) {
-			field.set(object, TypeMatcher.IntegerMatch(value));
-		} else if (type.equals("float")) {
-			field.set(object, TypeMatcher.FloatMatch(value));
-		} else if (type.equals("double")) {
-			field.set(object, TypeMatcher.DoubleMatch(value));
-		} else if (type.equals("long")) {
-			field.set(object, TypeMatcher.LongMatch(value));
-		} else if (type.equals("byte")) {
-			field.set(object, TypeMatcher.ByteMatch(value));
-		} else if (type.equals("short")) {
-			field.set(object, TypeMatcher.ShortMatch(value));
-		} else if (type.equals("boolean")) {
-			field.set(object, TypeMatcher.BooleanMatch(value));
-		} else {
-			field.set(object, value);
-		}
-
-		InfoPrinter.printInspectionInfo(object);
 	}
 
 	private void call(String args[]) throws IllegalArgumentException,
@@ -164,7 +170,8 @@ public class Inspector {
 
 			for (int i = 0; i < args.length - 2; i++) {
 				if (args[i + 2].startsWith("#")) {
-					methodArgs[i] = savedObjects.getObject(args[i + 2].substring(1));
+					methodArgs[i] = savedObjects.getObject(args[i + 2]
+							.substring(1));
 				} else {
 					methodArgs[i] = getBestMatch(args[i + 2]);
 				}
@@ -182,7 +189,7 @@ public class Inspector {
 							&& hasCompatibleArgs(m, methodArgs)) {
 						object = m.invoke(object, methodArgs);
 						historyGraph.addToHistory(object);
-						InfoPrinter.printInspectionInfo(object);
+						InfoPrinter.printObjectInfo(object);
 						return;
 					}
 				}
@@ -231,13 +238,11 @@ public class Inspector {
 	}
 
 	private void next() {
-		object = historyGraph.getNext();
-		InfoPrinter.printInspectionInfo(object);
+		updateObject(historyGraph.getNext());
 	}
 
 	private void previous() {
-		object = historyGraph.getPrevious();
-		InfoPrinter.printInspectionInfo(object);
+		updateObject(historyGraph.getPrevious());
 	}
 
 	private void save(String arg) {
@@ -245,9 +250,23 @@ public class Inspector {
 	}
 
 	private void get(String arg) {
-		object = savedObjects.getObject(arg);
-		if (object != null) {
-			InfoPrinter.printInspectionInfo(object);
+		updateObject(savedObjects.getObject(arg));
+		historyGraph.addToHistory(object);
+	}
+
+	public void updateObject(Object obj) {
+		if (obj != null) {
+			object = obj;
+			InfoPrinter.printObjectInfo(object);
+
+		}
+
+	}
+
+	public void updateObject(Object obj, Class<?> c) {
+		if (obj != null) {
+			object = obj;
+			InfoPrinter.printObjectInfo(object, c);
 		}
 	}
 }
