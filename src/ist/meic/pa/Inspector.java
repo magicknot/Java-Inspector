@@ -116,14 +116,16 @@ public class Inspector {
 		}
 	}
 
+	// value tem valor por omissao zero no caso em que nao vai para superclasses
 	private void inspect(String name, int value) throws SecurityException,
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
 
 		Object tempObject = object;
 
-		for (int i = 0; i < value; i++)
-			tempObject = object.getClass().getSuperclass().newInstance();
+		for (int i = 0; i < value; i++) {
+			tempObject = tempObject.getClass().getSuperclass().newInstance();
+		}
 
 		Field field = tempObject.getClass().getDeclaredField(name);
 
@@ -154,7 +156,7 @@ public class Inspector {
 			else
 				field.set(object, value);
 
-			updateObject(object,field.getType());
+			updateObject(object, field.getType());
 			field.setAccessible(originalAcess);
 		}
 
@@ -187,7 +189,9 @@ public class Inspector {
 				for (Method m : myClass.getMethods()) {
 					if (m.getName().equals(args[1])
 							&& hasCompatibleArgs(m, methodArgs)) {
+
 						object = m.invoke(object, methodArgs);
+
 						historyGraph.addToHistory(object);
 						InfoPrinter.printObjectInfo(object);
 						return;
