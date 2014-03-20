@@ -160,32 +160,38 @@ public class Inspector {
 		Object[] methodArgs = new Object[args.length - 2];
 		Class<?> myClass;
 
-		for (int i = 0; i < args.length - 2; i++) {
-			if (args[i + 2].startsWith("#")) {
-				methodArgs[i] = savedObjects
-						.getObject(args[i + 2].substring(1));
-			} else {
-				methodArgs[i] = getBestMatch(args[i + 2]);
-			}
-		}
+		if (object != null) {
 
-		// TODO verificar se e� null?
-
-		// verifica partindo da classe actual, passando depois `as superclasses
-		// se h� algum metodo com o mesmo nome
-		myClass = object.getClass();
-
-		while (!myClass.isInstance(Object.class)) {
-			for (Method m : myClass.getMethods()) {
-				if (m.getName().equals(args[1])
-						&& hasCompatibleArgs(m, methodArgs)) {
-					object = m.invoke(object, methodArgs);
-					historyGraph.addToHistory(object);
-					InfoPrinter.printInspectionInfo(object);
-					return;
+			for (int i = 0; i < args.length - 2; i++) {
+				if (args[i + 2].startsWith("#")) {
+					methodArgs[i] = savedObjects.getObject(args[i + 2].substring(1));
+				} else {
+					methodArgs[i] = getBestMatch(args[i + 2]);
 				}
 			}
-			myClass = myClass.getSuperclass();
+
+			// verifica partindo da classe actual, passando depois `as
+			// superclasses
+			// se ha algum metodo com o mesmo nome
+			myClass = object.getClass();
+
+			while (!myClass.isInstance(Object.class)) {
+
+				for (Method m : myClass.getMethods()) {
+					if (m.getName().equals(args[1])
+							&& hasCompatibleArgs(m, methodArgs)) {
+						object = m.invoke(object, methodArgs);
+						historyGraph.addToHistory(object);
+						InfoPrinter.printInspectionInfo(object);
+						return;
+					}
+				}
+				myClass = myClass.getSuperclass();
+			}
+		} else {
+			// TODO Confirmar se nao sera melhor chamar algum metodo da classe
+			// InfoPrinter
+			System.err.println("the object is null");
 		}
 	}
 
