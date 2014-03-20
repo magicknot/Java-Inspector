@@ -1,6 +1,7 @@
 package a;
 
 public class B {
+	private static int teste = 0;
 	private String c;
 	private String e = "B shadow super";
 	private int a = 1;

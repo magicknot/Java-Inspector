@@ -12,11 +12,11 @@ public class Application {
 		C c = new C();
 		D d = new D();
 
-		//new ist.meic.pa.Inspector().inspect(b);
+		new ist.meic.pa.Inspector().inspect(b);
 
 		// para testa uso da superclasse e/ou shadow
 		//new ist.meic.pa.Inspector().inspect(c);
-		new ist.meic.pa.Inspector().inspect(b);
+		new ist.meic.pa.Inspector().inspect(d);
 
 	}
 

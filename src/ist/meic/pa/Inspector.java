@@ -196,9 +196,8 @@ public class Inspector {
 				myClass = myClass.getSuperclass();
 			}
 		} else {
-			// TODO Confirmar se nao sera melhor chamar algum metodo da classe
-			// InfoPrinter
-			System.err.println("the object is null");
+			InfoPrinter
+					.printInspectionInfo("cCommand: the object invocated does not exist");
 		}
 	}
 

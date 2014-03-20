@@ -19,8 +19,8 @@ public class InfoPrinter {
 		} else {
 			printObjectInfo(object);
 		}
-
-	}
+		
+		}
 
 	public static void printObjectInfo(Object object) {
 		System.err.println(object + " is an instance of "
@@ -41,10 +41,15 @@ public class InfoPrinter {
 
 	private static void printFieldsInfo(Field[] fields, Object object) {
 		for (Field field : fields) {
-			if (Modifier.isPrivate(field.getModifiers())
-					|| Modifier.isProtected(field.getModifiers())
-					|| Modifier.isStatic(field.getModifiers()))
-				field.setAccessible(true);
+
+			// don't print static variables
+			if (Modifier.isStatic(field.getModifiers())) {
+				continue;
+			}
+
+			Boolean fieldAccess = field.isAccessible();
+			field.setAccessible(true);
+
 			try {
 				Object fieldObj = field.get(object);
 
@@ -70,6 +75,8 @@ public class InfoPrinter {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
+
+			field.setAccessible(fieldAccess);
 		}
 	}
 
@@ -126,5 +133,9 @@ public class InfoPrinter {
 			System.err.println("Superclasse: "
 					+ object.getClass().getSuperclass().getName());
 		}
+	}
+
+	private static void printMessageError(String s) {
+		System.err.println(s);
 	}
 }
