@@ -159,22 +159,58 @@ public class Inspector {
 
 	private void modify(String name, String value)
 			throws IllegalArgumentException, IllegalAccessException,
-			SecurityException, NoSuchFieldException, InvocationTargetException {
+			SecurityException, NoSuchFieldException, InvocationTargetException,
+			InstantiationException {
 
-		Field field = object.getClass().getDeclaredField(name);
+		Object tempObject = object;
+		Boolean found = false;
+		Field field = null;
+		Field[] fields;
 
-		boolean originalAcess = field.isAccessible();
-		field.setAccessible(true);
+		// procura nas superclasses
+		while (!found) {
 
-		if (!Modifier.isStatic(field.getModifiers())) {
-			if (field.getType().isPrimitive())
-				field.set(object,
-						TypeMatches.parseObject(field.getType(), value));
-			else
-				field.set(object, value);
+			fields = tempObject.getClass().getDeclaredFields();
 
-			updateObject(object);
-			field.setAccessible(originalAcess);
+			for (Field fieldAux : fields) {
+				if (fieldAux.getName().equals(name)) {
+					field = fieldAux;
+					found = true;
+					break;
+				}
+			}
+
+			// se nao encontrou o field passa para a superclasse
+			if (!found
+					&& !tempObject.getClass().getSuperclass()
+							.isInstance(Object.class)) {
+				tempObject = tempObject.getClass().getSuperclass()
+						.newInstance();
+			} else {
+				break;
+			}
+		}
+
+		if (field != null) {
+
+			boolean originalAccess = field.isAccessible();
+			field.setAccessible(true);
+
+			if (!Modifier.isStatic(field.getModifiers())) {
+				if (field.getType().isPrimitive()) {
+					field.set(tempObject,
+							TypeMatches.parseObject(field.getType(), value));
+
+				} else {
+					field.set(tempObject, value);
+				}
+
+				updateObject(object);
+			}
+
+			field.setAccessible(originalAccess);
+		} else {
+			InfoPrinter.printNullInfo("modify");
 		}
 
 	}
@@ -257,7 +293,7 @@ public class Inspector {
 		 * historyGraph.addToHistory(object);
 		 * InfoPrinter.printObjectInfo(object); return; } } myClass =
 		 * myClass.getSuperclass(); } } else { InfoPrinter
-		 * .printObjectInfo("cCommand: the object invocated does not exist"); }
+		 * .printNullInfo("cCommand"); }
 		 */
 	}
 

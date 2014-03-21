@@ -14,7 +14,7 @@ public class Application {
 		D d = new D();
 		E e = new E();
 
-		new ist.meic.pa.Inspector().inspect(b);
+		//new ist.meic.pa.Inspector().inspect(b);
 
 		// para testar uso da superclasse e/ou shadow
 		// new ist.meic.pa.Inspector().inspect(c);
