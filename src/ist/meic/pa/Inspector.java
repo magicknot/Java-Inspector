@@ -91,6 +91,9 @@ public class Inspector {
 		TypeMatches.init("parseFloat", Float.class, float.class);
 		TypeMatches.init("parseLong", Long.class, long.class);
 		TypeMatches.init("parseCharacter", Character.class, char.class);
+		TypeMatches.init("parseBoolean", Boolean.class, boolean.class);
+		TypeMatches.init("parseByte", Byte.class, byte.class);
+		TypeMatches.init("parseShort", Short.class, short.class);
 	}
 
 	public void inspect(Object object) {
@@ -220,12 +223,11 @@ public class Inspector {
 
 		while (bestMethod == null
 				|| myObject.getClass().isInstance(Object.class)) {
-			
+
 			myObject = myObject.getClass().getSuperclass();
 			bestMethod = filterMethods(
 					myObject.getClass().getDeclaredMethods(), args,
 					nProvidedArgs);
-			
 
 		}
 
