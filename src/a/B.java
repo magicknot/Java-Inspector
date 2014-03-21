@@ -8,6 +8,7 @@ public class B {
 	protected int d;
 	private int[] array = new int[] { 1, 2, 3 };
 	private String[] arrayS = new String[] { "a", "b", "c" };
+	private char m= 'a';
 
 	public void ola() {
 		System.out.println("B: ola sou um metodo da superclasse");

@@ -37,16 +37,19 @@ public class Inspector {
 				IllegalAccessException, InvocationTargetException,
 				SecurityException, NoSuchMethodException {
 
+			if (isChar(arg) && isPrimitive(c))
+				return matches.get(c).invoke(arg.substring(1), 0);
+
+			if (isSaved(arg))
+				return savedObjects.getObject(arg.substring(1));
+
+			if (isString(arg))
+				return arg.substring(1, arg.length() - 1);
+
 			if (isPrimitive(c))
 				return matches.get(c).invoke(c, arg);
-			else if (isSaved(arg))
-				return savedObjects.getObject(arg.substring(1));
-			else if (isString(arg))
-				return arg.substring(1, arg.length() - 1);
-			else if (isChar(arg))
-				return matches.get(char.class).invoke(c, arg.substring(1));
-			else
-				return arg;
+
+			return arg;
 		}
 
 		private static boolean isString(String arg) {
@@ -73,6 +76,10 @@ public class Inspector {
 				return matchNumber.size() + 1;
 		}
 
+		public char parseChar(String arg) {
+			return arg.charAt(0);
+		}
+
 	}
 
 	private HistoryGraph historyGraph;
@@ -87,7 +94,7 @@ public class Inspector {
 		TypeMatches.init("parseDouble", Double.class, double.class);
 		TypeMatches.init("parseFloat", Float.class, float.class);
 		TypeMatches.init("parseLong", Long.class, long.class);
-		TypeMatches.init("parseCharacter", Character.class, char.class);
+		TypeMatches.init("parseChar", TypeMatches.class, char.class);
 		TypeMatches.init("parseBoolean", Boolean.class, boolean.class);
 		TypeMatches.init("parseByte", Byte.class, byte.class);
 		TypeMatches.init("parseShort", Short.class, short.class);
@@ -224,8 +231,8 @@ public class Inspector {
 
 			if (!Modifier.isStatic(field.getModifiers())) {
 				if (field.getType().isPrimitive()) {
-					field.set(tempObject,
-							TypeMatches.parseArg(field.getType(), value,savedObjects));
+					field.set(tempObject, TypeMatches.parseArg(field.getType(),
+							value, savedObjects));
 
 				} else {
 					field.set(tempObject, value);

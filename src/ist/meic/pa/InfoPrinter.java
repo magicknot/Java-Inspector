@@ -32,65 +32,68 @@ public class InfoPrinter {
 	}
 
 	private static void printStructureInfo(Object object) {
-		// printFieldsInfo(object.getClass().getDeclaredFields(), object);
-		printFieldsInfo(object);
-		printAnnotationsInfo(object.getClass().getAnnotations());
-		printConstructorsInfo(object.getClass().getConstructors());
-		printInterfacesInfo(object.getClass().getInterfaces());
-		printMethodsInfo(object.getClass().getDeclaredMethods());
-		printSuperClassesInfo(object);
+
+		try {
+
+			Object actualObj = object;
+
+			System.err.println("Attributes:");
+
+			while (actualObj != Object.class) {
+
+				printFieldsInfo(actualObj);
+				actualObj = actualObj.getClass().getSuperclass();
+
+			}
+
+			System.err.println("----------");
+			printAnnotationsInfo(object.getClass().getAnnotations());
+			printConstructorsInfo(object.getClass().getConstructors());
+			printInterfacesInfo(object.getClass().getInterfaces());
+			printMethodsInfo(object.getClass().getDeclaredMethods());
+			printSuperClassesInfo(object);
+
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 
-	private static void printFieldsInfo(Object object) {
+	private static void printFieldsInfo(Object object)
+			throws IllegalArgumentException, IllegalAccessException {
 
-		while (!object.getClass().isInstance(Object.class)) {
-			for (Field field : object.getClass().getDeclaredFields()) {
+		for (Field field : object.getClass().getDeclaredFields()) {
 
-				// don't print static variables
-				if (Modifier.isStatic(field.getModifiers())) {
-					continue;
-				}
-
-				Boolean fieldAccess = field.isAccessible();
-				field.setAccessible(true);
-
-				try {
-					Object fieldObj = field.get(object);
-
-					if (fieldObj != null && fieldObj.getClass().isArray()) {
-
-						System.err.print(field.toString() + " = [ ");
-
-						for (int i = 0; i < Array.getLength(fieldObj); i++) {
-							System.err.print(Array.get(fieldObj, i) + " ");
-						}
-						System.err.print("]");
-						// print a new line
-						System.err.println("");
-
-					} else {
-						System.err.println(field.toString() + " = "
-								+ field.get(object));
-					}
-				} catch (IllegalArgumentException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				} catch (IllegalAccessException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-
-				field.setAccessible(fieldAccess);
+			// don't print static variables
+			if (Modifier.isStatic(field.getModifiers())) {
+				continue;
 			}
-			try {
-				object = object.getClass().getSuperclass().newInstance();
-			} catch (InstantiationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+
+			Boolean fieldAccess = field.isAccessible();
+			field.setAccessible(true);
+
+			Object fieldObj = field.get(object);
+
+			if (fieldObj != null && fieldObj.getClass().isArray()) {
+
+				System.err.print(field.toString() + " = [ ");
+
+				for (int i = 0; i < Array.getLength(fieldObj); i++) {
+					System.err.print(Array.get(fieldObj, i) + " ");
+				}
+				System.err.println("]");
+
+			} else {
+				System.err
+						.println(field.toString() + " = " + field.get(object));
 			}
+
+			field.setAccessible(fieldAccess);
+
 		}
 
 	}
