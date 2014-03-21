@@ -7,9 +7,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 
 public class Inspector {
 
@@ -34,19 +32,40 @@ public class Inspector {
 			}
 		}
 
-		public static Object parseObject(Class<?> c, Object obj)
-				throws IllegalArgumentException, IllegalAccessException,
-				InvocationTargetException {
+		public static Object parseArg(Class<?> c, String arg,
+				SavedObjects savedObjects) throws IllegalArgumentException,
+				IllegalAccessException, InvocationTargetException,
+				SecurityException, NoSuchMethodException {
 
-			if (matches.containsKey(c))
-				return matches.get(c).invoke(c, obj);
+			if (isPrimitive(c))
+				return matches.get(c).invoke(c, arg);
+			else if (isSaved(arg))
+				return savedObjects.getObject(arg.substring(1));
+			else if (isString(arg))
+				return arg.substring(1, arg.length() - 1);
+			else if (isChar(arg))
+				return matches.get(char.class).invoke(c, arg.substring(1));
 			else
-				return null;
+				return arg;
 		}
 
-		public static int getMatchValue(Class<?> c) {
+		private static boolean isString(String arg) {
+			return arg.startsWith("\"") && arg.endsWith("\"");
+		}
 
-			System.out.println("size " + matchNumber.size());
+		private static boolean isChar(String arg) {
+			return arg.startsWith("\'");
+		}
+
+		private static boolean isSaved(String arg) {
+			return arg.startsWith("#");
+		}
+
+		private static boolean isPrimitive(Class<?> c) {
+			return matches.containsKey(c);
+		}
+
+		public static int getPriorityValue(Class<?> c) {
 
 			if (matchNumber.containsKey(c)) {
 				return matchNumber.get(c);
@@ -68,6 +87,10 @@ public class Inspector {
 		TypeMatches.init("parseDouble", Double.class, double.class);
 		TypeMatches.init("parseFloat", Float.class, float.class);
 		TypeMatches.init("parseLong", Long.class, long.class);
+		TypeMatches.init("parseCharacter", Character.class, char.class);
+		TypeMatches.init("parseBoolean", Boolean.class, boolean.class);
+		TypeMatches.init("parseByte", Byte.class, byte.class);
+		TypeMatches.init("parseShort", Short.class, short.class);
 	}
 
 	public void inspect(Object object) {
@@ -129,6 +152,9 @@ public class Inspector {
 			} catch (InstantiationException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (NoSuchMethodException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
@@ -160,7 +186,7 @@ public class Inspector {
 	private void modify(String name, String value)
 			throws IllegalArgumentException, IllegalAccessException,
 			SecurityException, NoSuchFieldException, InvocationTargetException,
-			InstantiationException {
+			InstantiationException, NoSuchMethodException {
 
 		Object tempObject = object;
 		Boolean found = false;
@@ -199,7 +225,7 @@ public class Inspector {
 			if (!Modifier.isStatic(field.getModifiers())) {
 				if (field.getType().isPrimitive()) {
 					field.set(tempObject,
-							TypeMatches.parseObject(field.getType(), value));
+							TypeMatches.parseArg(field.getType(), value,savedObjects));
 
 				} else {
 					field.set(tempObject, value);
@@ -216,111 +242,112 @@ public class Inspector {
 	}
 
 	private void call(String args[]) throws IllegalArgumentException,
-			IllegalAccessException, InvocationTargetException {
+			IllegalAccessException, InvocationTargetException,
+			SecurityException, NoSuchMethodException {
 
-		Object[] methodArgs = new Object[args.length - 2];
-		ArrayList<Method> methods = new ArrayList<Method>();
+		int nProvidedArgs = args.length - 2;
+		Method bestMethod = null;
+		Object[] methodArgs = new Object[nProvidedArgs];
+		Object myObject = object;
 
-		// descarta todos os metodos que sejam divergentes no
-		// numero de argumentos ou nome
-		for (Method m : object.getClass().getDeclaredMethods()) {
-			if (m.getName().equals(args[1])
-					&& m.getParameterTypes().length == methodArgs.length) {
-				methods.add(m);
-			}
+		bestMethod = filterMethods(myObject.getClass().getDeclaredMethods(),
+				args, nProvidedArgs);
+
+		while (bestMethod == null
+				|| myObject.getClass().isInstance(Object.class)) {
+
+			myObject = myObject.getClass().getSuperclass();
+			bestMethod = filterMethods(
+					myObject.getClass().getDeclaredMethods(), args,
+					nProvidedArgs);
+
 		}
-		/*
-		 * System.out.println(args.length + " " + primTypes.length + " " +
-		 * methodArgs.length); for (int i = 0; i < args.length - 2; i++) { for
-		 * (int j = 0; j < primTypes.length; j++) { try { methodArgs[i] =
-		 * TypeMatches.parseObject(primTypes[j], args[i + 2]);
-		 * System.out.println(methodArgs[i]); break;
-		 * 
-		 * } catch (NumberFormatException e) { continue; } catch
-		 * (InvocationTargetException e) { continue; } }
-		 * 
-		 * }
-		 */
-
-		// tenta fazer o parse de cada argumento de cada metodo no respectivo
-		// argumento passado como input, se sao incompativeis o metodo
-		// e removido
-		for (int i = 0; i < args.length - 2; i++)
-			for (int j = 0; j < methods.size(); j++) {
-				try {
-
-					TypeMatches.parseObject(
-							methods.get(j).getParameterTypes()[i], args[i + 2]);
-
-				} catch (NumberFormatException e) {
-					methods.remove(j);
-				}
-			}
 
 		// ordena os metodos e escolhe o mais compativel
-		Method bestMethod = getBestMethod(methods, args);
 
 		// fazer a conversao dos argumentos do input conforme
 		// os tipos do metodo que escolheu
 		for (int i = 0; i < bestMethod.getParameterTypes().length; i++)
-			methodArgs[i] = TypeMatches.parseObject(
-					bestMethod.getParameterTypes()[i], args[i + 2]);
+			methodArgs[i] = TypeMatches.parseArg(
+					bestMethod.getParameterTypes()[i], args[i + 2],
+					savedObjects);
 
 		updateObject(bestMethod.invoke(object, methodArgs));
 		historyGraph.addToHistory(object);
 
 		// falta a sintaxe do # e o tratar da superclasse
 
-		/*
-		 * Object[] methodArgs = new Object[args.length - 2]; Class<?> myClass;
-		 * 
-		 * if (object != null) {
-		 * 
-		 * for (int i = 0; i < args.length - 2; i++) { if (args[i +
-		 * 2].startsWith("#")) { methodArgs[i] = savedObjects.getObject(args[i +
-		 * 2] .substring(1)); } else { methodArgs[i] = getBestMatch(args[i +
-		 * 2]); } }
-		 * 
-		 * // verifica partindo da classe actual, passando depois `as //
-		 * superclasses // se ha algum metodo com o mesmo nome myClass =
-		 * object.getClass();
-		 * 
-		 * while (!myClass.isInstance(Object.class)) {
-		 * 
-		 * for (Method m : myClass.getMethods()) { if
-		 * (m.getName().equals(args[1]) && hasCompatibleArgs(m, methodArgs)) {
-		 * object = m.invoke(object, methodArgs);
-		 * historyGraph.addToHistory(object);
-		 * InfoPrinter.printObjectInfo(object); return; } } myClass =
-		 * myClass.getSuperclass(); } } else { InfoPrinter
-		 * .printNullInfo("cCommand"); }
-		 */
 	}
 
-	public Method getBestMethod(ArrayList<Method> methods, String[] args) {
+	public Method filterMethods(Method[] methods, String[] args,
+			int nProvidedArgs) {
+
 		int minVal = 0;
+		Method bestMethod = null;
 		int tempVal = 0;
-		int multiple = 1;
-		Method selectedMethod = null;
 
+		// descarta todos os metodos que sejam divergentes no
+		// numero de argumentos ou nome
 		for (Method m : methods) {
-			for (Class<?> c : m.getParameterTypes()) {
-				System.out.println(c);
-				tempVal = tempVal + multiple * TypeMatches.getMatchValue(c);
-				multiple = multiple * 10;
-			}
+			if (m.getName().equals(args[1])
+					&& m.getParameterTypes().length == nProvidedArgs
+					&& isCompatible(args, m.getParameterTypes())) {
 
-			if (tempVal < minVal || minVal == 0) {
-				minVal = tempVal;
-				selectedMethod = m;
-			}
+				tempVal = classifyMethod(m, args);
 
-			tempVal = 0;
-			multiple = 1;
+				if (tempVal < minVal || minVal == 0) {
+					minVal = tempVal;
+					bestMethod = m;
+				}
+
+			}
 
 		}
 
-		return selectedMethod;
+		return bestMethod;
+
+	}
+
+	public int classifyMethod(Method method, String[] args) {
+
+		int value = 0;
+		int multiple = 1;
+
+		for (Class<?> c : method.getParameterTypes()) {
+			value = value + multiple * TypeMatches.getPriorityValue(c);
+			multiple = multiple * 10;
+		}
+
+		return value;
+	}
+
+	public boolean isCompatible(String args[], Class<?> methodArgs[]) {
+
+		try {
+			for (int i = 0; i < args.length - 2; i++) {
+				TypeMatches.parseArg(methodArgs[i], args[i + 2], savedObjects);
+			}
+
+			return true;
+
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return false;
 
 	}
 
