@@ -173,7 +173,7 @@ public class Inspector {
 			else
 				field.set(object, value);
 
-			updateObject(object,field.getType());
+			updateObject(object);
 			field.setAccessible(originalAcess);
 		}
 
@@ -192,7 +192,6 @@ public class Inspector {
 					&& m.getParameterTypes().length == methodArgs.length) {
 				methods.add(m);
 			}
-
 		}
 		/*
 		 * System.out.println(args.length + " " + primTypes.length + " " +
@@ -219,7 +218,6 @@ public class Inspector {
 
 				} catch (NumberFormatException e) {
 					methods.remove(j);
-
 				}
 			}
 
