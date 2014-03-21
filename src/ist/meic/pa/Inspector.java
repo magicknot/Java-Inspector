@@ -167,7 +167,7 @@ public class Inspector {
 		Field field = null;
 		Field[] fields;
 
-		// procura nas superclasses
+		// procura o field na classe e se nao encontrar procura nas superclasses
 		while (!found) {
 
 			fields = tempObject.getClass().getDeclaredFields();

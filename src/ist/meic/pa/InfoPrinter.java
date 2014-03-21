@@ -54,22 +54,6 @@ public class InfoPrinter {
 				Boolean fieldAccess = field.isAccessible();
 				field.setAccessible(true);
 
-				/* Debug Begin */
-				try {
-					if (field.getName().equals("d")) {
-						System.err.println("3");
-						System.err.println("field Name: " + field.getName()
-								+ " ; fieldValue: " + field.get(object));
-					}
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				/* Debug Begin */
-
 				try {
 					Object fieldObj = field.get(object);
 
