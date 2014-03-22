@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="JavaInspector" basedir="." default="create-jar">
+
+	<property name="src.dir" value="src" />
+	<property name="classes.dir" value="classes" />
+
+	<path id="project.classpath">
+		<pathelement location="${classes.dir}" />
+	</path>
+
+
+	<target name="init">
+		<mkdir dir="${classes.dir}" />
+	</target>
+
+	<target name="clean">
+		<delete dir="${classes.dir}" />
+	</target>
+
+	<target name="compile" depends="clean,init">
+		<javac destdir="${classes.dir}" optimize="true" includeantruntime="false" target="1.6" source="1.6">
+			<src>
+				<pathelement path="${src.dir}" />
+			</src>
+		</javac>
+	</target>
+
+	<target name="create-jar" depends="compile">
+		<jar destfile="./inspector.jar">
+			<fileset dir="${classes.dir}" />
+		</jar>
+	</target>
+
+</project>

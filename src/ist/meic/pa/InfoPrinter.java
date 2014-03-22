@@ -4,30 +4,18 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class InfoPrinter {
 
-	public static void printObjectInfo(Object object, Class<?> classType) {
+	public static void printObjectInfo(Object obj, String objectClassName) {
 		// System.out.println(classType);
 
-		if (classType.isPrimitive()) {
-			System.err.println(object + " is an instance of " + classType);
+			System.err.println(obj + " is an instance of " + objectClassName);
 			System.err.println("----------");
-			printStructureInfo(object);
-		} else {
-			printObjectInfo(object);
-		}
-
-	}
-
-	public static void printObjectInfo(Object object) {
-
-		System.err.println(object + " is an instance of "
-				+ object.getClass().getCanonicalName());
-		System.err.println("----------");
-		printStructureInfo(object);
+			printStructureInfo(obj);
 
 	}
 
@@ -35,16 +23,9 @@ public class InfoPrinter {
 
 		try {
 
-			Object actualObj = object;
-
 			System.err.println("Attributes:");
 
-			while (actualObj != Object.class) {
-
-				printFieldsInfo(actualObj);
-				actualObj = actualObj.getClass().getSuperclass();
-
-			}
+			printFieldsInfo(object);
 
 			System.err.println("----------");
 			printAnnotationsInfo(object.getClass().getAnnotations());
@@ -59,40 +40,58 @@ public class InfoPrinter {
 		} catch (IllegalAccessException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 	}
 
 	private static void printFieldsInfo(Object object)
-			throws IllegalArgumentException, IllegalAccessException {
+			throws IllegalArgumentException, IllegalAccessException,
+			SecurityException, NoSuchMethodException, InvocationTargetException {
 
-		for (Field field : object.getClass().getDeclaredFields()) {
+		Class<?> actualClass = object.getClass();
 
-			// don't print static variables
-			if (Modifier.isStatic(field.getModifiers())) {
-				continue;
-			}
+		while (actualClass != Object.class) {
 
-			Boolean fieldAccess = field.isAccessible();
-			field.setAccessible(true);
+			for (Field field : actualClass.getDeclaredFields()) {
 
-			Object fieldObj = field.get(object);
-
-			if (fieldObj != null && fieldObj.getClass().isArray()) {
-
-				System.err.print(field.toString() + " = [ ");
-
-				for (int i = 0; i < Array.getLength(fieldObj); i++) {
-					System.err.print(Array.get(fieldObj, i) + " ");
+				// don't print static variables
+				if (Modifier.isStatic(field.getModifiers())) {
+					continue;
 				}
-				System.err.println("]");
 
-			} else {
-				System.err
-						.println(field.toString() + " = " + field.get(object));
+				Boolean fieldAccess = field.isAccessible();
+				field.setAccessible(true);
+				Object fieldObj = field.get(object);
+				field.setAccessible(fieldAccess);
+
+				if (fieldObj == null)
+					continue;
+
+				if (fieldObj.getClass().isArray()) {
+
+					System.err.print(field.toString() + " = [ ");
+
+					for (int i = 0; i < Array.getLength(fieldObj); i++) {
+						System.err.print(Array.get(fieldObj, i) + " ");
+					}
+					System.err.println("]");
+
+				} else {
+					System.err.println(field.toString() + " = " + fieldObj);
+				}
+
 			}
 
-			field.setAccessible(fieldAccess);
+			actualClass = actualClass.getSuperclass();
 
 		}
 
@@ -115,6 +114,10 @@ public class InfoPrinter {
 	private static void printConstructorsInfo(Constructor<?>[] constructors) {
 		System.err.print("Constructors: ");
 
+		if (constructors.length == 0) {
+			System.err.print("there are no constructors.");
+		}
+
 		for (Constructor<?> constructor : constructors) {
 			System.err.print(constructor.toString() + "; ");
 		}
@@ -125,7 +128,7 @@ public class InfoPrinter {
 	private static void printInterfacesInfo(Class<?>[] interfaces) {
 		System.err.print("Interfaces: ");
 
-		if (interfaces.length < 1) {
+		if (interfaces.length == 0) {
 			System.err.print("there are no interfaces.");
 		}
 
@@ -139,6 +142,10 @@ public class InfoPrinter {
 	private static void printMethodsInfo(Method[] methods) {
 		System.err.print("Methods: ");
 
+		if (methods.length == 0) {
+			System.err.print("there are no interfaces.");
+		}
+
 		for (Method m : methods) {
 			System.err.print(m.toString() + "; ");
 		}
@@ -147,13 +154,20 @@ public class InfoPrinter {
 	}
 
 	private static void printSuperClassesInfo(Object object) {
-		if (object.getClass().getSuperclass() != null) {
-			System.err.println("Superclasse: "
-					+ object.getClass().getSuperclass().getName());
+		Class<?> actualClass = object.getClass().getSuperclass();
+		
+		System.err.print("Superclasses: ");
+
+		while (actualClass != Object.class) {
+			System.err.print(actualClass.getName() + " ");
+			actualClass = actualClass.getSuperclass();
 		}
+
+		System.err.println(actualClass);
 	}
 
 	public static void printNullInfo(String s) {
 		System.err.println(s + ": the object invocated does not exist");
 	}
+
 }

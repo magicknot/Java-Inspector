@@ -18,10 +18,10 @@ public class Inspector {
 		private static HashMap<Class<?>, Integer> matchNumber = new HashMap<Class<?>, Integer>();
 
 		public static void init(String methodName, Class<?> wrapper,
-				Class<?> primitive) {
+				Class<?> primitive, Class<?> returnType) {
 			try {
 				matches.put(primitive,
-						wrapper.getMethod(methodName, java.lang.String.class));
+						wrapper.getMethod(methodName, returnType));
 				matchNumber.put(primitive, matchNumber.size() + 1);
 			} catch (SecurityException e) {
 				// TODO Auto-generated catch block
@@ -37,17 +37,21 @@ public class Inspector {
 				IllegalAccessException, InvocationTargetException,
 				SecurityException, NoSuchMethodException {
 
-			if (isChar(arg) && isPrimitive(c))
+			if (isChar(arg) && isPrimitive(c)) {
 				return matches.get(c).invoke(arg.substring(1), 0);
+			}
 
-			if (isSaved(arg))
+			if (isSaved(arg)) {
 				return savedObjects.getObject(arg.substring(1));
+			}
 
-			if (isString(arg))
+			if (isString(arg)) {
 				return arg.substring(1, arg.length() - 1);
+			}
 
-			if (isPrimitive(c))
+			if (isPrimitive(c)) {
 				return matches.get(c).invoke(c, arg);
+			}
 
 			return arg;
 		}
@@ -76,10 +80,6 @@ public class Inspector {
 				return matchNumber.size() + 1;
 		}
 
-		public char parseChar(String arg) {
-			return arg.charAt(0);
-		}
-
 	}
 
 	private HistoryGraph historyGraph;
@@ -90,14 +90,16 @@ public class Inspector {
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
 		object = null;
-		TypeMatches.init("parseInt", Integer.class, int.class);
-		TypeMatches.init("parseDouble", Double.class, double.class);
-		TypeMatches.init("parseFloat", Float.class, float.class);
-		TypeMatches.init("parseLong", Long.class, long.class);
-		TypeMatches.init("parseChar", TypeMatches.class, char.class);
-		TypeMatches.init("parseBoolean", Boolean.class, boolean.class);
-		TypeMatches.init("parseByte", Byte.class, byte.class);
-		TypeMatches.init("parseShort", Short.class, short.class);
+		TypeMatches.init("parseInt", Integer.class, int.class, String.class);
+		TypeMatches.init("parseDouble", Double.class, double.class,
+				String.class);
+		TypeMatches.init("parseFloat", Float.class, float.class, String.class);
+		TypeMatches.init("parseLong", Long.class, long.class, String.class);
+		TypeMatches.init("parseBoolean", Boolean.class, boolean.class,
+				String.class);
+		TypeMatches.init("parseByte", Byte.class, byte.class, String.class);
+		TypeMatches.init("parseShort", Short.class, short.class, String.class);
+		TypeMatches.init("charAt", String.class, char.class, int.class);
 	}
 
 	public void inspect(Object object) {
@@ -171,21 +173,30 @@ public class Inspector {
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
 
-		Object tempObject = object;
+		Field field;
+		Class<?> actualClass = object.getClass();
 
-		for (int i = 0; i < value; i++) {
-			tempObject = tempObject.getClass().getSuperclass().newInstance();
+		if (value != 0) {
+
+			for (int i = 0; i < value; i++) {
+				actualClass = actualClass.getClass().getSuperclass();
+			}
+			field = actualClass.getField(name);
+
+		} else {
+			field = getFieldByName(name);
 		}
 
-		Field field = tempObject.getClass().getDeclaredField(name);
-
-		if (!Modifier.isStatic(field.getModifiers())) {
+		if (field != null) {
 			boolean originalAcess = field.isAccessible();
 			field.setAccessible(true);
-			updateObject(field.get(tempObject), field.getType());
-			historyGraph.addToHistory(object);
+			Object fieldObj = field.get(object);
 			field.setAccessible(originalAcess);
 
+			updateObject(fieldObj, field.getType());
+			historyGraph.addToHistory(fieldObj);
+		} else {
+			InfoPrinter.printNullInfo("inspect");
 		}
 
 	}
@@ -195,56 +206,46 @@ public class Inspector {
 			SecurityException, NoSuchFieldException, InvocationTargetException,
 			InstantiationException, NoSuchMethodException {
 
-		Object tempObject = object;
-		Boolean found = false;
-		Field field = null;
-		Field[] fields;
-
-		// procura o field na classe e se nao encontrar procura nas superclasses
-		while (!found) {
-
-			fields = tempObject.getClass().getDeclaredFields();
-
-			for (Field fieldAux : fields) {
-				if (fieldAux.getName().equals(name)) {
-					field = fieldAux;
-					found = true;
-					break;
-				}
-			}
-
-			// se nao encontrou o field passa para a superclasse
-			if (!found
-					&& !tempObject.getClass().getSuperclass()
-							.isInstance(Object.class)) {
-				tempObject = tempObject.getClass().getSuperclass()
-						.newInstance();
-			} else {
-				break;
-			}
-		}
+		Field field = getFieldByName(name);
 
 		if (field != null) {
 
 			boolean originalAccess = field.isAccessible();
 			field.setAccessible(true);
 
-			if (!Modifier.isStatic(field.getModifiers())) {
-				if (field.getType().isPrimitive()) {
-					field.set(tempObject, TypeMatches.parseArg(field.getType(),
-							value, savedObjects));
+			if (field.getType().isPrimitive()) {
+				field.set(object, TypeMatches.parseArg(field.getType(), value,
+						savedObjects));
 
-				} else {
-					field.set(tempObject, value);
-				}
-
-				updateObject(object);
+			} else {
+				field.set(object, value);
 			}
 
 			field.setAccessible(originalAccess);
+			updateObject(object);
+
 		} else {
 			InfoPrinter.printNullInfo("modify");
 		}
+
+	}
+
+	public Field getFieldByName(String name) {
+
+		Class<?> actualClass = object.getClass();
+
+		// procura o field na classe e se nao encontrar procura nas superclasses
+		while (actualClass != Object.class) {
+			for (Field f : actualClass.getDeclaredFields())
+				if (f.getName().equals(name)
+						&& !Modifier.isStatic(f.getModifiers())) {
+					return f;
+				}
+
+			actualClass = actualClass.getSuperclass();
+		}
+
+		return null;
 
 	}
 
@@ -252,21 +253,16 @@ public class Inspector {
 			IllegalAccessException, InvocationTargetException,
 			SecurityException, NoSuchMethodException {
 
-		int nProvidedArgs = args.length - 2;
 		Method bestMethod = null;
-		Object[] methodArgs = new Object[nProvidedArgs];
-		Object myObject = object;
+		Object[] methodArgs = new Object[args.length - 2];
+		Class<?> actualClass = object.getClass();
 
-		bestMethod = filterMethods(myObject.getClass().getDeclaredMethods(),
-				args, nProvidedArgs);
+		// bestMethod = filterMethods(actualClass.getDeclaredMethods(), args);
 
-		while (bestMethod == null
-				|| myObject.getClass().isInstance(Object.class)) {
+		while (bestMethod == null || actualClass == Object.class) {
 
-			myObject = myObject.getClass().getSuperclass();
-			bestMethod = filterMethods(
-					myObject.getClass().getDeclaredMethods(), args,
-					nProvidedArgs);
+			bestMethod = filterMethods(actualClass.getDeclaredMethods(), args);
+			actualClass = actualClass.getSuperclass();
 
 		}
 
@@ -282,16 +278,14 @@ public class Inspector {
 		updateObject(bestMethod.invoke(object, methodArgs));
 		historyGraph.addToHistory(object);
 
-		// falta a sintaxe do # e o tratar da superclasse
-
 	}
 
-	public Method filterMethods(Method[] methods, String[] args,
-			int nProvidedArgs) {
+	public Method filterMethods(Method[] methods, String[] args) {
 
 		int minVal = 0;
 		Method bestMethod = null;
 		int tempVal = 0;
+		int nProvidedArgs = args.length - 2;
 
 		// descarta todos os metodos que sejam divergentes no
 		// numero de argumentos ou nome
@@ -378,16 +372,23 @@ public class Inspector {
 	public void updateObject(Object obj) {
 		if (obj != null) {
 			object = obj;
-			InfoPrinter.printObjectInfo(object);
+			InfoPrinter.printObjectInfo(obj, obj.getClass().getCanonicalName());
 
 		}
 
 	}
 
-	public void updateObject(Object obj, Class<?> c) {
+	public void updateObject(Object obj, Class<?> classType) {
 		if (obj != null) {
 			object = obj;
-			InfoPrinter.printObjectInfo(object, c);
+
+			if (classType.isPrimitive()) {
+				InfoPrinter.printObjectInfo(obj, classType.toString());
+			} else {
+				InfoPrinter.printObjectInfo(obj, obj.getClass()
+						.getCanonicalName());
+			}
+
 		}
 	}
 }
