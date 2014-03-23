@@ -12,10 +12,22 @@ import java.util.HashMap;
 public class Inspector {
 
 	public enum TypeMatches {
-		Integer, Double, Float, Long, String;
+		Integer(int.class), Short(short.class), Byte(byte.class), Float(
+				float.class), Double(double.class), Long(long.class), Boolean(
+				boolean.class), Char(char.class);
 
 		private static HashMap<Class<?>, Method> matches = new HashMap<Class<?>, Method>();
 		private static HashMap<Class<?>, Integer> matchNumber = new HashMap<Class<?>, Integer>();
+
+		Class<?> primType;
+
+		TypeMatches(Class<?> primType) {
+			this.primType = primType;
+		}
+
+		public Class<?> getPrimType() {
+			return primType;
+		}
 
 		public static void init(String methodName, Class<?> wrapper,
 				Class<?> primitive, Class<?> returnType) {
@@ -36,7 +48,7 @@ public class Inspector {
 				SavedObjects savedObjects) throws IllegalArgumentException,
 				IllegalAccessException, InvocationTargetException,
 				SecurityException, NoSuchMethodException {
-
+			
 			if (isChar(arg) && isPrimitive(c)) {
 				return matches.get(c).invoke(arg.substring(1), 0);
 			}
@@ -74,7 +86,7 @@ public class Inspector {
 
 		public static int getPriorityValue(Class<?> c) {
 
-			if (matchNumber.containsKey(c)) {
+			if (isPrimitive(c)) {
 				return matchNumber.get(c);
 			} else
 				return matchNumber.size() + 1;
@@ -214,8 +226,7 @@ public class Inspector {
 			field.setAccessible(true);
 
 			if (field.getType().isPrimitive()) {
-				field.set(object, TypeMatches.parseArg(field.getType(), value,
-						savedObjects));
+				field.set(object, parse(field.getType(), value));
 
 			} else {
 				field.set(object, value);
@@ -249,52 +260,65 @@ public class Inspector {
 
 	}
 
-	private void call(String args[]) throws IllegalArgumentException,
+	private void call(String inputArgs[]) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException,
 			SecurityException, NoSuchMethodException {
 
-		Method bestMethod = null;
-		Object[] methodArgs = new Object[args.length - 2];
+		Object[] methodArgs = new Object[inputArgs.length - 2];
+		String[] args = new String[inputArgs.length - 2];
+		String inputName = inputArgs[1];
 		Class<?> actualClass = object.getClass();
+		Method bestMethod = null;
+
+		for (int i = 0; i < inputArgs.length - 2; i++) {
+			args[i] = inputArgs[i + 2];
+		}
+		
 
 		// bestMethod = filterMethods(actualClass.getDeclaredMethods(), args);
 
-		while (bestMethod == null || actualClass == Object.class) {
+		while (bestMethod == null && actualClass != Object.class) {
 
-			bestMethod = filterMethods(actualClass.getDeclaredMethods(), args);
+			bestMethod = filterMethods(actualClass.getDeclaredMethods(), args,
+					inputName);
 			actualClass = actualClass.getSuperclass();
 
 		}
+		
 
 		// ordena os metodos e escolhe o mais compativel
 
 		// fazer a conversao dos argumentos do input conforme
 		// os tipos do metodo que escolheu
-		for (int i = 0; i < bestMethod.getParameterTypes().length; i++)
-			methodArgs[i] = TypeMatches.parseArg(
-					bestMethod.getParameterTypes()[i], args[i + 2],
-					savedObjects);
+		for (int i = 0; i < bestMethod.getParameterTypes().length; i++) {
+			if (bestMethod.getParameterTypes()[i] == Object.class) {
+				methodArgs[i] = parseObjArg(args[i]);
+			} else {
+				methodArgs[i] = parse(bestMethod.getParameterTypes()[i],
+						args[i]);
+			}
+
+		}
 
 		updateObject(bestMethod.invoke(object, methodArgs));
 		historyGraph.addToHistory(object);
 
 	}
 
-	public Method filterMethods(Method[] methods, String[] args) {
+	public Method filterMethods(Method[] methods, String[] args, String name) {
 
 		int minVal = 0;
 		Method bestMethod = null;
 		int tempVal = 0;
-		int nProvidedArgs = args.length - 2;
 
 		// descarta todos os metodos que sejam divergentes no
 		// numero de argumentos ou nome
 		for (Method m : methods) {
-			if (m.getName().equals(args[1])
-					&& m.getParameterTypes().length == nProvidedArgs
+			if (m.getName().equals(name)
+					&& m.getParameterTypes().length == args.length
 					&& isCompatible(args, m.getParameterTypes())) {
 
-				tempVal = classifyMethod(m, args);
+				tempVal = classifyMethod(m);
 
 				if (tempVal < minVal || minVal == 0) {
 					minVal = tempVal;
@@ -309,7 +333,7 @@ public class Inspector {
 
 	}
 
-	public int classifyMethod(Method method, String[] args) {
+	public int classifyMethod(Method method) {
 
 		int value = 0;
 		int multiple = 1;
@@ -322,33 +346,45 @@ public class Inspector {
 		return value;
 	}
 
-	public boolean isCompatible(String args[], Class<?> methodArgs[]) {
+	public Object parseObjArg(String args) {
 
-		try {
-			for (int i = 0; i < args.length - 2; i++) {
-				TypeMatches.parseArg(methodArgs[i], args[i + 2], savedObjects);
-			}
+		Object obj;
 
-			return true;
+		for (TypeMatches type : TypeMatches.values()) {
+			obj = parse(type.getPrimType(), args);
 
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			if (obj != null)
+				return obj;
 		}
 
-		return false;
+		return null;
+
+	}
+
+	public Object parse(Class<?> type, String arg) {
+
+		try {
+			return TypeMatches.parseArg(type, arg, savedObjects);
+		} catch (IllegalArgumentException e) {
+		} catch (SecurityException e) {
+		} catch (IllegalAccessException e) {
+		} catch (InvocationTargetException e) {
+		} catch (NoSuchMethodException e) {
+		}
+
+		return null;
+	}
+
+	public boolean isCompatible(String args[], Class<?> methodArgs[]) {
+
+		boolean result = true;
+
+		for (int i = 0; i < args.length; i++) {
+			result = parse(methodArgs[i], args[i]) != null && result;
+
+		}
+
+		return result;
 
 	}
 
