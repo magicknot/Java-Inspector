@@ -31,15 +31,12 @@ public enum Types {
 	public static void init(Class<?> wrapper, Class<?> primitive) {
 		try {
 			if (primitive == char.class) {
-				matches.put(primitive,
-						getTypeConstructor(wrapper, char.class));
+				matches.put(primitive, getTypeConstructor(wrapper, char.class));
 			} else {
 				matches.put(primitive,
 						getTypeConstructor(wrapper, String.class));
 			}
-
 			matchNumber.put(primitive, matchNumber.size() + 1);
-
 		} catch (SecurityException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -52,8 +49,7 @@ public enum Types {
 	public static Object parseArg(Class<?> c, String arg,
 			SavedObjects savedObjects) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException,
-			SecurityException, NoSuchMethodException,
-			InstantiationException {
+			SecurityException, NoSuchMethodException, InstantiationException {
 
 		if (isChar(arg) && isPrimitive(c)) {
 			return matches.get(c).newInstance(arg.charAt(1));
@@ -91,7 +87,6 @@ public enum Types {
 	}
 
 	public static int getPriorityValue(Class<?> c) {
-
 		if (isPrimitive(c)) {
 			return matchNumber.get(c);
 		} else
@@ -99,8 +94,7 @@ public enum Types {
 	}
 
 	public static Constructor<?> getTypeConstructor(Class<?> type,
-			Class<?> argType) throws SecurityException,
-			NoSuchMethodException {
+			Class<?> argType) throws SecurityException, NoSuchMethodException {
 		return type.getConstructor(argType);
 	}
 

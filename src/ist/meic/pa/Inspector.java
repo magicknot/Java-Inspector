@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class Inspector {
+	
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
 	private Object object;
@@ -89,7 +90,6 @@ public class Inspector {
 		}
 	}
 
-	// value tem valor por omissao zero no caso em que nao vai para superclasses
 	private void inspect(String name, int value) throws SecurityException,
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
@@ -98,12 +98,10 @@ public class Inspector {
 		Class<?> actualClass = object.getClass();
 
 		if (value != 0) {
-
 			for (int i = 0; i < value; i++) {
 				actualClass = actualClass.getClass().getSuperclass();
 			}
 			field = actualClass.getField(name);
-
 		} else {
 			field = getFieldByName(name);
 		}
@@ -113,13 +111,11 @@ public class Inspector {
 			field.setAccessible(true);
 			Object fieldObj = field.get(object);
 			field.setAccessible(originalAcess);
-
 			updateObject(fieldObj, field.getType());
 			historyGraph.addToHistory(fieldObj);
 		} else {
 			InfoPrinter.printNullInfo("inspect");
 		}
-
 	}
 
 	private void modify(String name, String value)
@@ -145,41 +141,35 @@ public class Inspector {
 		}
 	}
 
-	public Field getFieldByName(String name) {
+	private Field getFieldByName(String name) {
 		Class<?> actualClass = object.getClass();
 
-		// procura o field na classe e se nao encontrar procura nas superclasses
 		while (actualClass != Object.class) {
 			for (Field f : actualClass.getDeclaredFields())
 				if (f.getName().equals(name)
 						&& !Modifier.isStatic(f.getModifiers())) {
 					return f;
 				}
-
 			actualClass = actualClass.getSuperclass();
 		}
 		return null;
 	}
 
-	private void call(String inputArgs[]) throws IllegalArgumentException,
+	private void call(String input[]) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException,
 			SecurityException, NoSuchMethodException {
 
-		Object[] methodArgs = new Object[inputArgs.length - 2];
-		String[] args = new String[inputArgs.length - 2];
-		String inputName = inputArgs[1];
+		Object[] methodArgs = new Object[input.length - 2];
+		String[] inputArgs = new String[input.length - 2];
+		String methodName = input[1];
 		Class<?> actualClass = object.getClass();
 		Method bestMethod = null;
 
-		for (int i = 0; i < inputArgs.length - 2; i++) {
-			args[i] = inputArgs[i + 2];
-		}
-
-		// bestMethod = filterMethods(actualClass.getDeclaredMethods(), args);
+		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
 
 		while (bestMethod == null && actualClass != Object.class) {
-			bestMethod = filterMethods(actualClass.getDeclaredMethods(), args,
-					inputName);
+			bestMethod = filterMethods(actualClass.getDeclaredMethods(), inputArgs,
+					methodName);
 			actualClass = actualClass.getSuperclass();
 		}
 
@@ -194,17 +184,17 @@ public class Inspector {
 		// os tipos do metodo que escolheu
 		for (int i = 0; i < bestMethod.getParameterTypes().length; i++) {
 			if (bestMethod.getParameterTypes()[i] == Object.class) {
-				methodArgs[i] = parseObjArg(args[i]);
+				methodArgs[i] = parseObjectType(inputArgs[i]);
 			} else {
 				methodArgs[i] = parse(bestMethod.getParameterTypes()[i],
-						args[i]);
+						inputArgs[i]);
 			}
 		}
 		updateObject(bestMethod.invoke(object, methodArgs));
 		historyGraph.addToHistory(object);
 	}
 
-	public Method filterMethods(Method[] methods, String[] args, String name) {
+	private Method filterMethods(Method[] methods, String[] args, String name) {
 		int minVal = 0;
 		Method bestMethod = null;
 		int tempVal = 0;
@@ -227,7 +217,7 @@ public class Inspector {
 		return bestMethod;
 	}
 
-	public int classifyMethod(Method method) {
+	private int classifyMethod(Method method) {
 		int value = 0;
 		int multiple = 1;
 
@@ -238,19 +228,18 @@ public class Inspector {
 		return value;
 	}
 
-	public Object parseObjArg(String args) {
+	private Object parseObjectType(String arg) {
 		Object obj;
 
 		for (Types type : Types.values()) {
-			obj = parse(type.getPrimitive(), args);
+			obj = parse(type.getPrimitive(), arg);
 			if (obj != null)
 				return obj;
 		}
 		return null;
 	}
 
-	public Object parse(Class<?> type, String arg) {
-
+	private Object parse(Class<?> type, String arg) {
 		try {
 			return Types.parseArg(type, arg, savedObjects);
 		} catch (IllegalArgumentException e) {
@@ -259,11 +248,11 @@ public class Inspector {
 		} catch (InvocationTargetException e) {
 		} catch (NoSuchMethodException e) {
 		} catch (InstantiationException e) {
-		}
+		} 
 		return null;
 	}
 
-	public boolean isCompatible(String args[], Class<?> methodArgs[]) {
+	private boolean isCompatible(String args[], Class<?> methodArgs[]) {
 
 		boolean result = true;
 
@@ -290,14 +279,14 @@ public class Inspector {
 		historyGraph.addToHistory(object);
 	}
 
-	public void updateObject(Object obj) {
+	private void updateObject(Object obj) {
 		if (obj != null) {
 			object = obj;
 			InfoPrinter.printObjectInfo(obj, obj.getClass().getCanonicalName());
 		}
 	}
 
-	public void updateObject(Object obj, Class<?> classType) {
+	private void updateObject(Object obj, Class<?> classType) {
 		if (obj != null) {
 			object = obj;
 
