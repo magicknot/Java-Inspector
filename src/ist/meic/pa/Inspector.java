@@ -3,6 +3,7 @@ package ist.meic.pa;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -11,30 +12,43 @@ import java.util.HashMap;
 
 public class Inspector {
 
-	public enum TypeMatches {
-		Integer(int.class), Short(short.class), Byte(byte.class), Float(
-				float.class), Double(double.class), Long(long.class), Boolean(
-				boolean.class), Char(char.class);
+	public enum Types {
+		Integer(int.class, Integer.class), Short(short.class, Short.class), Byte(
+				byte.class, Byte.class), Float(float.class, Float.class), Double(
+				double.class, Double.class), Long(long.class, Long.class), Boolean(
+				boolean.class, Boolean.class), Char(char.class, Character.class);
 
-		private static HashMap<Class<?>, Method> matches = new HashMap<Class<?>, Method>();
+		private static HashMap<Class<?>, Constructor<?>> matches = new HashMap<Class<?>, Constructor<?>>();
 		private static HashMap<Class<?>, Integer> matchNumber = new HashMap<Class<?>, Integer>();
 
 		Class<?> primType;
+		Class<?> wrapperType;
 
-		TypeMatches(Class<?> primType) {
+		Types(Class<?> primType, Class<?> wrapperType) {
 			this.primType = primType;
+			this.wrapperType = wrapperType;
 		}
 
 		public Class<?> getPrimType() {
 			return primType;
 		}
 
-		public static void init(String methodName, Class<?> wrapper,
-				Class<?> primitive, Class<?> returnType) {
+		public Class<?> getWrapperType() {
+			return wrapperType;
+		}
+
+		public static void init(Class<?> wrapper, Class<?> primitive) {
 			try {
-				matches.put(primitive,
-						wrapper.getMethod(methodName, returnType));
+				if (primitive == char.class) {
+					matches.put(primitive,
+							getTypeConstructor(wrapper, char.class));
+				} else {
+					matches.put(primitive,
+							getTypeConstructor(wrapper, String.class));
+				}
+
 				matchNumber.put(primitive, matchNumber.size() + 1);
+
 			} catch (SecurityException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -47,10 +61,11 @@ public class Inspector {
 		public static Object parseArg(Class<?> c, String arg,
 				SavedObjects savedObjects) throws IllegalArgumentException,
 				IllegalAccessException, InvocationTargetException,
-				SecurityException, NoSuchMethodException {
-			
+				SecurityException, NoSuchMethodException,
+				InstantiationException {
+
 			if (isChar(arg) && isPrimitive(c)) {
-				return matches.get(c).invoke(arg.substring(1), 0);
+				return matches.get(c).newInstance(arg.charAt(1));
 			}
 
 			if (isSaved(arg)) {
@@ -62,7 +77,7 @@ public class Inspector {
 			}
 
 			if (isPrimitive(c)) {
-				return matches.get(c).invoke(c, arg);
+				return matches.get(c).newInstance(arg);
 			}
 
 			return arg;
@@ -92,6 +107,12 @@ public class Inspector {
 				return matchNumber.size() + 1;
 		}
 
+		public static Constructor<?> getTypeConstructor(Class<?> type,
+				Class<?> argType) throws SecurityException,
+				NoSuchMethodException {
+			return type.getConstructor(argType);
+		}
+
 	}
 
 	private HistoryGraph historyGraph;
@@ -102,16 +123,12 @@ public class Inspector {
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
 		object = null;
-		TypeMatches.init("parseInt", Integer.class, int.class, String.class);
-		TypeMatches.init("parseDouble", Double.class, double.class,
-				String.class);
-		TypeMatches.init("parseFloat", Float.class, float.class, String.class);
-		TypeMatches.init("parseLong", Long.class, long.class, String.class);
-		TypeMatches.init("parseBoolean", Boolean.class, boolean.class,
-				String.class);
-		TypeMatches.init("parseByte", Byte.class, byte.class, String.class);
-		TypeMatches.init("parseShort", Short.class, short.class, String.class);
-		TypeMatches.init("charAt", String.class, char.class, int.class);
+
+		for (Types type : Types.values()) {
+			Types.init(type.getWrapperType(), type.getPrimType());
+
+		}
+
 	}
 
 	public void inspect(Object object) {
@@ -273,7 +290,6 @@ public class Inspector {
 		for (int i = 0; i < inputArgs.length - 2; i++) {
 			args[i] = inputArgs[i + 2];
 		}
-		
 
 		// bestMethod = filterMethods(actualClass.getDeclaredMethods(), args);
 
@@ -284,7 +300,11 @@ public class Inspector {
 			actualClass = actualClass.getSuperclass();
 
 		}
-		
+
+		if (bestMethod == null) {
+			InfoPrinter.printNullInfo("call");
+			return;
+		}
 
 		// ordena os metodos e escolhe o mais compativel
 
@@ -339,7 +359,7 @@ public class Inspector {
 		int multiple = 1;
 
 		for (Class<?> c : method.getParameterTypes()) {
-			value = value + multiple * TypeMatches.getPriorityValue(c);
+			value = value + multiple * Types.getPriorityValue(c);
 			multiple = multiple * 10;
 		}
 
@@ -350,7 +370,7 @@ public class Inspector {
 
 		Object obj;
 
-		for (TypeMatches type : TypeMatches.values()) {
+		for (Types type : Types.values()) {
 			obj = parse(type.getPrimType(), args);
 
 			if (obj != null)
@@ -364,12 +384,13 @@ public class Inspector {
 	public Object parse(Class<?> type, String arg) {
 
 		try {
-			return TypeMatches.parseArg(type, arg, savedObjects);
+			return Types.parseArg(type, arg, savedObjects);
 		} catch (IllegalArgumentException e) {
 		} catch (SecurityException e) {
 		} catch (IllegalAccessException e) {
 		} catch (InvocationTargetException e) {
 		} catch (NoSuchMethodException e) {
+		} catch (InstantiationException e) {
 		}
 
 		return null;
