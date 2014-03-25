@@ -5,24 +5,17 @@ import java.util.Map;
 
 public class SavedObjects {
 
-	Map<String, Object> objectMap;
-	Map<String, Class<?>> classMap;
+	Map<String, Object> map;
 
 	public SavedObjects() {
-		objectMap = new HashMap<String, Object>();
-		classMap = new HashMap<String, Class<?>>();
+		map = new HashMap<String, Object>();
 	}
 
 	public Object getObject(String key) {
-		return objectMap.get(key);
+		return map.get(key);
 	}
 
-	public Class<?> getObjClass(String key) {
-		return classMap.get(key);
-	}
-
-	public void saveObject(String key, Object obj, Class<?> objectClass) {
-		objectMap.put(key, obj);
-		classMap.put(key, objectClass);
+	public void saveObject(String key, Object obj) {
+		map.put(key, obj);
 	}
 }

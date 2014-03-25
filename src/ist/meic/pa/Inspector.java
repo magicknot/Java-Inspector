@@ -13,13 +13,11 @@ public class Inspector {
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
 	private Object object;
-	private Class<?> objectClass;
 
 	public Inspector() {
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
 		object = null;
-		objectClass = null;
 
 		for (Types type : Types.values()) {
 			Types.init(type.getWrapper(), type.getPrimitive());
@@ -27,8 +25,8 @@ public class Inspector {
 	}
 
 	public void inspect(Object object) {
-		updateObject(object, object.getClass());
-		historyGraph.addToHistory(object, objectClass);
+		updateObject(object);
+		historyGraph.addToHistory(object);
 		readEvalPrint();
 	}
 
@@ -96,11 +94,11 @@ public class Inspector {
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
 
-		if (object == null || objectClass.isPrimitive())
+		if (object == null || getObjectClass(object).isPrimitive())
 			return;
 
 		Field field;
-		Class<?> actualClass = objectClass;
+		Class<?> actualClass = getObjectClass(object);
 
 		if (value != 0) {
 			for (int i = 0; i < value; i++) {
@@ -116,8 +114,8 @@ public class Inspector {
 			field.setAccessible(true);
 			Object fieldObj = field.get(object);
 			field.setAccessible(originalAcess);
-			updateObject(fieldObj, field.getType());
-			historyGraph.addToHistory(fieldObj, field.getType());
+			updateObject(fieldObj);
+			historyGraph.addToHistory(fieldObj);
 		} else {
 			InfoPrinter.printNullInfo("inspect");
 		}
@@ -128,7 +126,7 @@ public class Inspector {
 			SecurityException, NoSuchFieldException, InvocationTargetException,
 			InstantiationException, NoSuchMethodException {
 
-		if (object == null || objectClass.isPrimitive())
+		if (object == null || getObjectClass(object).isPrimitive())
 			return;
 
 		Field field = getFieldInAnyClass(name);
@@ -137,20 +135,20 @@ public class Inspector {
 			boolean originalAccess = field.isAccessible();
 			field.setAccessible(true);
 
-			if (field.getType().isPrimitive()) {
+			if (Types.isParsable(field.getType())) {
 				field.set(object, parse(field.getType(), value));
 			} else {
 				field.set(object, value);
 			}
 			field.setAccessible(originalAccess);
-			updateObject(object, objectClass);
+			updateObject(object);
 		} else {
 			InfoPrinter.printNullInfo("modify");
 		}
 	}
 
 	private Field getFieldInAnyClass(String name) {
-		Class<?> actualClass = objectClass;
+		Class<?> actualClass = getObjectClass(object);
 		Field field = null;
 
 		while (actualClass != Object.class && field == null) {
@@ -174,15 +172,14 @@ public class Inspector {
 			IllegalAccessException, InvocationTargetException,
 			SecurityException, NoSuchMethodException {
 
-		if (object == null || objectClass.isPrimitive())
+		if (object == null || getObjectClass(object).isPrimitive())
 			return;
 
 		Object[] methodArgs = new Object[input.length - 2];
 		String[] inputArgs = new String[input.length - 2];
 		String methodName = input[1];
-		Class<?> actualClass = objectClass;
+		Class<?> actualClass = getObjectClass(object);
 		Method bestMethod = null;
-		Object result = null;
 
 		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
 
@@ -197,10 +194,6 @@ public class Inspector {
 			return;
 		}
 
-		// ordena os metodos e escolhe o mais compativel
-
-		// fazer a conversao dos argumentos do input conforme
-		// os tipos do metodo que escolheu
 		for (int i = 0; i < bestMethod.getParameterTypes().length; i++) {
 			if (bestMethod.getParameterTypes()[i] == Object.class) {
 				methodArgs[i] = parseObjectType(inputArgs[i]);
@@ -210,9 +203,8 @@ public class Inspector {
 			}
 		}
 
-		result = bestMethod.invoke(object, methodArgs);
-		updateObject(result, result.getClass());
-		historyGraph.addToHistory(object, objectClass);
+		updateObject(bestMethod.invoke(object, methodArgs));
+		historyGraph.addToHistory(object);
 	}
 
 	private Method filterMethods(Method[] methods, String[] args, String name) {
@@ -284,34 +276,38 @@ public class Inspector {
 	}
 
 	private void next() {
-		historyGraph.setNext();
-		updateObject(historyGraph.getActualObject(),
-				historyGraph.getActualClass());
+		updateObject(historyGraph.getNext());
 	}
 
 	private void previous() {
-		historyGraph.setPrevious();
-		updateObject(historyGraph.getActualObject(),
-				historyGraph.getActualClass());
+		updateObject(historyGraph.getPrevious());
 	}
 
 	private void save(String arg) {
-		savedObjects.saveObject(arg, object, objectClass);
+		savedObjects.saveObject(arg, object);
 	}
 
 	private void get(String arg) {
-		updateObject(savedObjects.getObject(arg), savedObjects.getObjClass(arg));
-		historyGraph.addToHistory(object, objectClass);
+		updateObject(savedObjects.getObject(arg));
+		historyGraph.addToHistory(object);
 	}
 
-	private void updateObject(Object obj, Class<?> classType) {
+	private void updateObject(Object obj) {
 		object = obj;
-		objectClass = classType;
 
-		InfoPrinter.printObjectInfo(obj, classType.getCanonicalName());
+		InfoPrinter
+				.printObjectInfo(obj, getObjectClass(obj).getCanonicalName());
 
-		if (!classType.isPrimitive() && obj != null) {
+		if (!getObjectClass(obj).isPrimitive() && obj != null) {
 			InfoPrinter.printStructureInfo(obj);
 		}
+	}
+
+	private Class<?> getObjectClass(Object obj) {
+		for (Types type : Types.values()) {
+			if (obj.getClass() == type.getWrapper())
+				return type.getPrimitive();
+		}
+		return obj.getClass();
 	}
 }

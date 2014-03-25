@@ -5,44 +5,41 @@ import java.util.ArrayList;
 public class HistoryGraph {
 
 	private ArrayList<Object> objects;
-	private ArrayList<Class<?>> classes;
 	private int historyPointer;
 
 	public HistoryGraph() {
 		objects = new ArrayList<Object>();
-		classes = new ArrayList<Class<?>>();
 		historyPointer = -1;
 	}
 
-	public void addToHistory(Object object, Class<?> objClass) {
-		if (historyPointer == objects.size() - 1) {
+	public ArrayList<Object> getObjects() {
+		return objects;
+	}
+
+	public void addToHistory(Object object) {
+		if (historyPointer == objects.size() -1) {
 			objects.add(object);
-			classes.add(objClass);
 			historyPointer++;
-		} else {
-			objects.remove(objects.size() - 1);
-			addToHistory(object, objClass);
+		}else{
+			objects.remove(objects.size()-1);
+			addToHistory(object);
 		}
 	}
 
-	public void setNext() {
+	public Object getNext() {
+		//System.out.println("pointer " + historyPointer + " objects.size " + objects.size());
 		if (historyPointer < objects.size() - 1) {
-			++historyPointer;
+			return objects.get(++historyPointer);
+		} else {
+			return objects.get(historyPointer);
 		}
 	}
 
-	public void setPrevious() {
+	public Object getPrevious() {
 		if (historyPointer > 0) {
-			--historyPointer;
+			return objects.get(--historyPointer);
+		} else {
+			return objects.get(historyPointer);
 		}
 	}
-
-	public Class<?> getActualClass() {
-		return classes.get(historyPointer);
-	}
-
-	public Object getActualObject() {
-		return objects.get(historyPointer);
-	}
-
 }

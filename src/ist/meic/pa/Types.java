@@ -93,9 +93,13 @@ public enum Types {
 			return matchNumber.size() + 1;
 	}
 
-	public static Constructor<?> getTypeConstructor(Class<?> type,
+	private static Constructor<?> getTypeConstructor(Class<?> type,
 			Class<?> argType) throws SecurityException, NoSuchMethodException {
 		return type.getConstructor(argType);
+	}
+
+	public static boolean isParsable(Class<?> classType) {
+		return classType.isPrimitive() || classType == String.class;
 	}
 
 }
