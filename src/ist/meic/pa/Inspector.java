@@ -12,12 +12,14 @@ public class Inspector {
 
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
+	private Command command;
 	private Object object;
 
 	public Inspector() {
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
 		object = null;
+		command = new Command(this);
 
 		for (Types type : Types.values()) {
 			Types.init(type.getWrapper(), type.getPrimitive());
@@ -43,54 +45,29 @@ public class Inspector {
 				if (arguments[0].equals("q")) {
 					buffer.close();
 					return;
-				} else if (arguments[0].equals("i")) {
-					if (arguments.length < 3) {
-						inspect(arguments[1], 0);
-					} else {
-						inspect(arguments[1], Integer.parseInt(arguments[2]));
-					}
-				} else if (arguments[0].equals("m")) {
-					modify(arguments[1], arguments[2]);
-				} else if (arguments[0].equals("c")) {
-					call(arguments);
-				} else if (arguments[0].equals("n")) {
-					next();
-				} else if (arguments[0].equals("p")) {
-					previous();
-				} else if (arguments[0].equals("s")) {
-					save(arguments[1]);
-				} else if (arguments[0].equals("g")) {
-					get(arguments[1]);
+				} else {
+					command.getClass()
+							.getDeclaredMethod(arguments[0], String[].class)
+							.invoke(command, new Object[] { arguments });
 				}
+
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IllegalArgumentException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (SecurityException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NoSuchFieldException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (InvocationTargetException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InstantiationException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (NoSuchMethodException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
 
-	private void inspect(String name, int value) throws SecurityException,
+	void inspect(String name, int value) throws SecurityException,
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
 
@@ -121,10 +98,10 @@ public class Inspector {
 		}
 	}
 
-	private void modify(String name, String value)
-			throws IllegalArgumentException, IllegalAccessException,
-			SecurityException, NoSuchFieldException, InvocationTargetException,
-			InstantiationException, NoSuchMethodException {
+	void modify(String name, String value) throws IllegalArgumentException,
+			IllegalAccessException, SecurityException, NoSuchFieldException,
+			InvocationTargetException, InstantiationException,
+			NoSuchMethodException {
 
 		if (object == null || getObjectClass(object).isPrimitive())
 			return;
@@ -168,20 +145,16 @@ public class Inspector {
 		return null;
 	}
 
-	private void call(String input[]) throws IllegalArgumentException,
-			IllegalAccessException, InvocationTargetException,
-			SecurityException, NoSuchMethodException {
+	void call(String inputArgs[], String methodName)
+			throws IllegalArgumentException, IllegalAccessException,
+			InvocationTargetException, SecurityException, NoSuchMethodException {
 
-		if (object == null || getObjectClass(object).isPrimitive())
-			return;
-
-		Object[] methodArgs = new Object[input.length - 2];
-		String[] inputArgs = new String[input.length - 2];
-		String methodName = input[1];
+		Object[] methodArgs = new Object[inputArgs.length];
 		Class<?> actualClass = getObjectClass(object);
 		Method bestMethod = null;
 
-		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
+		if (object == null || getObjectClass(object).isPrimitive())
+			return;
 
 		while (bestMethod == null && actualClass != Object.class) {
 			bestMethod = filterMethods(actualClass.getDeclaredMethods(),
@@ -212,8 +185,6 @@ public class Inspector {
 		Method bestMethod = null;
 		int tempVal = 0;
 
-		// descarta todos os metodos que sejam divergentes no
-		// numero de argumentos ou nome
 		for (Method m : methods) {
 			if (m.getName().equals(name)
 					&& m.getParameterTypes().length == args.length
@@ -275,19 +246,19 @@ public class Inspector {
 		return result;
 	}
 
-	private void next() {
+	void next() {
 		updateObject(historyGraph.getNext());
 	}
 
-	private void previous() {
+	void previous() {
 		updateObject(historyGraph.getPrevious());
 	}
 
-	private void save(String arg) {
+	void save(String arg) {
 		savedObjects.saveObject(arg, object);
 	}
 
-	private void get(String arg) {
+	void get(String arg) {
 		updateObject(savedObjects.getObject(arg));
 		historyGraph.addToHistory(object);
 	}
