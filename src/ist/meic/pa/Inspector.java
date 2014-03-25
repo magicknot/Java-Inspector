@@ -13,11 +13,13 @@ public class Inspector {
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
 	private Object object;
+	private Class<?> objectClass;
 
 	public Inspector() {
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
 		object = null;
+		objectClass = null;
 
 		for (Types type : Types.values()) {
 			Types.init(type.getWrapper(), type.getPrimitive());
@@ -25,8 +27,8 @@ public class Inspector {
 	}
 
 	public void inspect(Object object) {
-		updateObject(object);
-		historyGraph.addToHistory(object);
+		updateObject(object, object.getClass());
+		historyGraph.addToHistory(object, objectClass);
 		readEvalPrint();
 	}
 
@@ -94,8 +96,11 @@ public class Inspector {
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
 
+		if (object == null || objectClass.isPrimitive())
+			return;
+
 		Field field;
-		Class<?> actualClass = object.getClass();
+		Class<?> actualClass = objectClass;
 
 		if (value != 0) {
 			for (int i = 0; i < value; i++) {
@@ -112,7 +117,7 @@ public class Inspector {
 			Object fieldObj = field.get(object);
 			field.setAccessible(originalAcess);
 			updateObject(fieldObj, field.getType());
-			historyGraph.addToHistory(fieldObj);
+			historyGraph.addToHistory(fieldObj, field.getType());
 		} else {
 			InfoPrinter.printNullInfo("inspect");
 		}
@@ -122,6 +127,9 @@ public class Inspector {
 			throws IllegalArgumentException, IllegalAccessException,
 			SecurityException, NoSuchFieldException, InvocationTargetException,
 			InstantiationException, NoSuchMethodException {
+
+		if (object == null || objectClass.isPrimitive())
+			return;
 
 		Field field = getFieldInAnyClass(name);
 
@@ -135,14 +143,14 @@ public class Inspector {
 				field.set(object, value);
 			}
 			field.setAccessible(originalAccess);
-			updateObject(object);
+			updateObject(object, objectClass);
 		} else {
 			InfoPrinter.printNullInfo("modify");
 		}
 	}
 
 	private Field getFieldInAnyClass(String name) {
-		Class<?> actualClass = object.getClass();
+		Class<?> actualClass = objectClass;
 		Field field = null;
 
 		while (actualClass != Object.class && field == null) {
@@ -166,11 +174,15 @@ public class Inspector {
 			IllegalAccessException, InvocationTargetException,
 			SecurityException, NoSuchMethodException {
 
+		if (object == null || objectClass.isPrimitive())
+			return;
+
 		Object[] methodArgs = new Object[input.length - 2];
 		String[] inputArgs = new String[input.length - 2];
 		String methodName = input[1];
-		Class<?> actualClass = object.getClass();
+		Class<?> actualClass = objectClass;
 		Method bestMethod = null;
+		Object result = null;
 
 		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
 
@@ -197,8 +209,10 @@ public class Inspector {
 						inputArgs[i]);
 			}
 		}
-		updateObject(bestMethod.invoke(object, methodArgs));
-		historyGraph.addToHistory(object);
+
+		result = bestMethod.invoke(object, methodArgs);
+		updateObject(result, result.getClass());
+		historyGraph.addToHistory(object, objectClass);
 	}
 
 	private Method filterMethods(Method[] methods, String[] args, String name) {
@@ -270,39 +284,34 @@ public class Inspector {
 	}
 
 	private void next() {
-		updateObject(historyGraph.getNext());
+		historyGraph.setNext();
+		updateObject(historyGraph.getActualObject(),
+				historyGraph.getActualClass());
 	}
 
 	private void previous() {
-		updateObject(historyGraph.getPrevious());
+		historyGraph.setPrevious();
+		updateObject(historyGraph.getActualObject(),
+				historyGraph.getActualClass());
 	}
 
 	private void save(String arg) {
-		savedObjects.saveObject(arg, object);
+		savedObjects.saveObject(arg, object, objectClass);
 	}
 
 	private void get(String arg) {
-		updateObject(savedObjects.getObject(arg));
-		historyGraph.addToHistory(object);
-	}
-
-	private void updateObject(Object obj) {
-		if (obj != null) {
-			object = obj;
-			InfoPrinter.printObjectInfo(obj, obj.getClass().getCanonicalName());
-		}
+		updateObject(savedObjects.getObject(arg), savedObjects.getObjClass(arg));
+		historyGraph.addToHistory(object, objectClass);
 	}
 
 	private void updateObject(Object obj, Class<?> classType) {
-		if (obj != null) {
-			object = obj;
+		object = obj;
+		objectClass = classType;
 
-			if (classType.isPrimitive()) {
-				InfoPrinter.printObjectInfo(obj, classType.toString());
-			} else {
-				InfoPrinter.printObjectInfo(obj, obj.getClass()
-						.getCanonicalName());
-			}
+		InfoPrinter.printObjectInfo(obj, classType.getCanonicalName());
+
+		if (!classType.isPrimitive() && obj != null) {
+			InfoPrinter.printStructureInfo(obj);
 		}
 	}
 }

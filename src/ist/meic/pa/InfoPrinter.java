@@ -11,18 +11,14 @@ import java.lang.reflect.Modifier;
 public class InfoPrinter {
 
 	public static void printObjectInfo(Object obj, String objectClassName) {
-		// System.out.println(classType);
-
 			System.err.println(obj + " is an instance of " + objectClassName);
-			System.err.println("----------");
-			printStructureInfo(obj);
-
 	}
 
-	private static void printStructureInfo(Object object) {
+	public static void printStructureInfo(Object object) {
 
 		try {
-
+			
+			System.err.println("----------");
 			System.err.println("Attributes:");
 
 			printFieldsInfo(object);
