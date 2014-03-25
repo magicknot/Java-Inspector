@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 public class Inspector {
-	
+
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
 	private Object object;
@@ -99,11 +99,11 @@ public class Inspector {
 
 		if (value != 0) {
 			for (int i = 0; i < value; i++) {
-				actualClass = actualClass.getClass().getSuperclass();
+				actualClass = actualClass.getSuperclass();
 			}
-			field = actualClass.getField(name);
+			field = getFieldOnClass(name, actualClass);
 		} else {
-			field = getFieldByName(name);
+			field = getFieldInAnyClass(name);
 		}
 
 		if (field != null) {
@@ -123,7 +123,7 @@ public class Inspector {
 			SecurityException, NoSuchFieldException, InvocationTargetException,
 			InstantiationException, NoSuchMethodException {
 
-		Field field = getFieldByName(name);
+		Field field = getFieldInAnyClass(name);
 
 		if (field != null) {
 			boolean originalAccess = field.isAccessible();
@@ -141,16 +141,23 @@ public class Inspector {
 		}
 	}
 
-	private Field getFieldByName(String name) {
+	private Field getFieldInAnyClass(String name) {
 		Class<?> actualClass = object.getClass();
+		Field field = null;
 
-		while (actualClass != Object.class) {
-			for (Field f : actualClass.getDeclaredFields())
-				if (f.getName().equals(name)
-						&& !Modifier.isStatic(f.getModifiers())) {
-					return f;
-				}
+		while (actualClass != Object.class && field == null) {
+			field = getFieldOnClass(name, actualClass);
 			actualClass = actualClass.getSuperclass();
+		}
+		return field;
+	}
+
+	private Field getFieldOnClass(String name, Class<?> classWithField) {
+		for (Field f : classWithField.getDeclaredFields()) {
+			if (f.getName().equals(name)
+					&& !Modifier.isStatic(f.getModifiers())) {
+				return f;
+			}
 		}
 		return null;
 	}
@@ -168,8 +175,8 @@ public class Inspector {
 		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
 
 		while (bestMethod == null && actualClass != Object.class) {
-			bestMethod = filterMethods(actualClass.getDeclaredMethods(), inputArgs,
-					methodName);
+			bestMethod = filterMethods(actualClass.getDeclaredMethods(),
+					inputArgs, methodName);
 			actualClass = actualClass.getSuperclass();
 		}
 
@@ -248,7 +255,7 @@ public class Inspector {
 		} catch (InvocationTargetException e) {
 		} catch (NoSuchMethodException e) {
 		} catch (InstantiationException e) {
-		} 
+		}
 		return null;
 	}
 
