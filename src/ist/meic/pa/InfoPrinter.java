@@ -72,21 +72,26 @@ public class InfoPrinter {
 				field.setAccessible(true);
 				Object fieldObj = field.get(object);
 				field.setAccessible(fieldAccess);
+				
+				
+				System.err.print(field.toString());
 
-				if (fieldObj == null)
+				if (fieldObj == null){
+					System.err.println(";");
 					continue;
+				}
 
 				if (fieldObj.getClass().isArray()) {
 
-					System.err.print(field.toString() + " = [ ");
+					System.err.print(" = [ ");
 
 					for (int i = 0; i < Array.getLength(fieldObj); i++) {
 						System.err.print(Array.get(fieldObj, i) + " ");
 					}
-					System.err.println("]");
+					System.err.println("];");
 
 				} else {
-					System.err.println(field.toString() + " = " + fieldObj);
+					System.err.println(" = " + fieldObj+";");
 				}
 
 			}
