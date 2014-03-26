@@ -12,29 +12,29 @@ public class Inspector {
 
 	private HistoryGraph historyGraph;
 	private SavedObjects savedObjects;
-	private Command command;
 	private Object object;
+	private BufferedReader buffer;
 
 	public Inspector() {
 		historyGraph = new HistoryGraph();
 		savedObjects = new SavedObjects();
 		object = null;
-		command = new Command(this);
+		buffer = null;
+	}
+
+	public void inspect(Object object) {
 
 		for (Types type : Types.values()) {
 			Types.init(type.getWrapper(), type.getPrimitive());
 		}
-	}
 
-	public void inspect(Object object) {
 		updateObject(object);
 		historyGraph.addToHistory(object);
 		readEvalPrint();
 	}
 
-	public void readEvalPrint() {
-		BufferedReader buffer = new BufferedReader(new InputStreamReader(
-				System.in));
+	private void readEvalPrint() {
+		buffer = new BufferedReader(new InputStreamReader(System.in));
 
 		while (true) {
 			System.err.print("> ");
@@ -46,9 +46,9 @@ public class Inspector {
 					buffer.close();
 					return;
 				} else {
-					command.getClass()
+					this.getClass()
 							.getDeclaredMethod(arguments[0], String[].class)
-							.invoke(command, new Object[] { arguments });
+							.invoke(this, new Object[] { arguments });
 				}
 
 			} catch (IOException e) {
@@ -67,18 +67,21 @@ public class Inspector {
 		}
 	}
 
-	void inspect(String name, int value) throws SecurityException,
+	@SuppressWarnings("unused")
+	private void i(String input[]) throws SecurityException,
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
+
+		Field field;
+		Class<?> actualClass = getObjectClass(object);
+		String name = input[1];
 
 		if (object == null || getObjectClass(object).isPrimitive())
 			return;
 
-		Field field;
-		Class<?> actualClass = getObjectClass(object);
-
-		if (value != 0) {
-			for (int i = 0; i < value; i++) {
+		if (input.length == 3) {
+			int level = Integer.parseInt(input[2]);
+			for (int i = 0; i < level; i++) {
 				actualClass = actualClass.getSuperclass();
 			}
 			field = getFieldOnClass(name, actualClass);
@@ -98,10 +101,14 @@ public class Inspector {
 		}
 	}
 
-	void modify(String name, String value) throws IllegalArgumentException,
+	@SuppressWarnings("unused")
+	private void m(String input[]) throws IllegalArgumentException,
 			IllegalAccessException, SecurityException, NoSuchFieldException,
 			InvocationTargetException, InstantiationException,
 			NoSuchMethodException {
+
+		String name = input[1];
+		String value = input[2];
 
 		if (object == null || getObjectClass(object).isPrimitive())
 			return;
@@ -112,7 +119,8 @@ public class Inspector {
 			boolean originalAccess = field.isAccessible();
 			field.setAccessible(true);
 
-			if (Types.isParsable(field.getType())) {
+			if (field.getType().isPrimitive()
+					|| field.getType() == String.class) {
 				field.set(object, parse(field.getType(), value));
 			} else {
 				field.set(object, value);
@@ -145,20 +153,25 @@ public class Inspector {
 		return null;
 	}
 
-	void call(String inputArgs[], String methodName)
-			throws IllegalArgumentException, IllegalAccessException,
-			InvocationTargetException, SecurityException, NoSuchMethodException {
+	@SuppressWarnings("unused")
+	private void c(String input[]) throws IllegalArgumentException,
+			IllegalAccessException, InvocationTargetException,
+			SecurityException, NoSuchMethodException {
 
+		String name = input[1];
+		String[] inputArgs = new String[input.length - 2];
 		Object[] methodArgs = new Object[inputArgs.length];
 		Class<?> actualClass = getObjectClass(object);
 		Method bestMethod = null;
+
+		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
 
 		if (object == null || getObjectClass(object).isPrimitive())
 			return;
 
 		while (bestMethod == null && actualClass != Object.class) {
 			bestMethod = filterMethods(actualClass.getDeclaredMethods(),
-					inputArgs, methodName);
+					inputArgs, name);
 			actualClass = actualClass.getSuperclass();
 		}
 
@@ -246,20 +259,26 @@ public class Inspector {
 		return result;
 	}
 
-	void next() {
+	@SuppressWarnings("unused")
+	private void n(String input[]) {
 		updateObject(historyGraph.getNext());
 	}
 
-	void previous() {
+	@SuppressWarnings("unused")
+	private void p(String input[]) {
 		updateObject(historyGraph.getPrevious());
 	}
 
-	void save(String arg) {
-		savedObjects.saveObject(arg, object);
+	@SuppressWarnings("unused")
+	private void s(String input[]) {
+		String name = input[1];
+		savedObjects.saveObject(name, object);
 	}
 
-	void get(String arg) {
-		updateObject(savedObjects.getObject(arg));
+	@SuppressWarnings("unused")
+	private void g(String input[]) {
+		String name = input[1];
+		updateObject(savedObjects.getObject(name));
 		historyGraph.addToHistory(object);
 	}
 

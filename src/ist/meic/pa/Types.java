@@ -98,8 +98,4 @@ public enum Types {
 		return type.getConstructor(argType);
 	}
 
-	public static boolean isParsable(Class<?> classType) {
-		return classType.isPrimitive() || classType == String.class;
-	}
-
 }

@@ -31,19 +31,14 @@ public class InfoPrinter {
 			printSuperClassesInfo(object);
 
 		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvocationTargetException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -72,12 +67,12 @@ public class InfoPrinter {
 				
 				System.err.print(field.toString());
 
-				if (fieldObj == null){
+				/*if (fieldObj == null){
 					System.err.println(";");
 					continue;
-				}
+				}*/
 
-				if (fieldObj.getClass().isArray()) {
+				if (fieldObj != null && fieldObj.getClass().isArray()) {
 
 					System.err.print(" = [ ");
 
