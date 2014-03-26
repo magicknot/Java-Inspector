@@ -11,10 +11,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The Class Inspector.
+ * This inspector can be started from any point of a Java program. To do so all
+ * that have to be done is call the method {@link #inspect(Object)} passing the
+ * {@code Object} you want to inspect. After that it is possible to inspect and
+ * modify the object fields, call methods, save inspected objects for further
+ * calls and navigate through the history of inspected objects.
  */
 public class Inspector {
-
 	/** The timeline of used objects. */
 	private HistoryGraph historyGraph;
 
@@ -24,6 +27,9 @@ public class Inspector {
 	/** The object which is currently in use. */
 	private Object object;
 
+	/** The input reader */
+	private BufferedReader buffer;
+
 	/**
 	 * Instantiates a new inspector and initializes the {@link Types}.
 	 */
@@ -31,57 +37,21 @@ public class Inspector {
 		this.historyGraph = new HistoryGraph();
 		this.savedObjects = new HashMap<String, Object>();
 		this.object = null;
+		this.buffer = null;
+	}
 
+	/**
+	 * Gets the object class.
+	 * 
+	 * @param object
+	 *            the object of the class to be retrieved.
+	 */
+	private Class<?> getObjectClass(Object object) {
 		for (Types type : Types.values()) {
-			Types.init(type.getWrapper(), type.getPrimitive());
+			if (object.getClass() == type.getWrapper())
+				return type.getPrimitive();
 		}
-	}
-
-	/**
-	 * Sets the object.
-	 * 
-	 * @param object
-	 *            the new object to be set.
-	 */
-	private void setObject(Object object) {
-		if (object != null) {
-			System.out.println(object.getClass().isPrimitive());
-			this.object = object;
-			InfoPrinter.printObjectInfo(object, object.getClass()
-					.getCanonicalName());
-		}
-	}
-
-	/**
-	 * Sets the object. It checks whether the class type is a Java primitive or
-	 * not in order to print the proper information.
-	 * 
-	 * @param object
-	 *            the object to be set
-	 * @param classType
-	 *            the class type of the object
-	 */
-	private void setObject(Object object, Class<?> classType) {
-		if (object != null) {
-			this.object = object;
-			if (classType.isPrimitive()) {
-				InfoPrinter.printObjectInfo(object, classType.toString());
-			} else {
-				InfoPrinter.printObjectInfo(object, object.getClass()
-						.getCanonicalName());
-			}
-		}
-	}
-
-	/**
-	 * Gets the named object.
-	 * 
-	 * @param name
-	 *            the name of the object to be retrieved.
-	 */
-	private void get(String name) {
-		setObject(savedObjects.get(name));
-		historyGraph.addToHistory(object);
+		return object.getClass();
 	}
 
 	/**
@@ -93,7 +63,11 @@ public class Inspector {
 	 *            the object to be inspected
 	 */
 	public void inspect(Object object) {
-		setObject(object);
+		for (Types type : Types.values()) {
+			Types.init(type.getWrapper(), type.getPrimitive());
+		}
+
+		updateObject(object);
 		historyGraph.addToHistory(object);
 		readEvalPrint();
 	}
@@ -124,9 +98,8 @@ public class Inspector {
 	 * <li><b>q: terminate the execution.</b>
 	 * </ul>
 	 */
-	public void readEvalPrint() {
-		BufferedReader buffer = new BufferedReader(new InputStreamReader(
-				System.in));
+	private void readEvalPrint() {
+		buffer = new BufferedReader(new InputStreamReader(System.in));
 
 		while (true) {
 			System.err.print("> ");
@@ -136,49 +109,22 @@ public class Inspector {
 				if (arguments[0].equals("q")) {
 					buffer.close();
 					return;
-				} else if (arguments[0].equals("i")) {
-					if (arguments.length < 3) {
-						inspectField(arguments[1], 0);
-					} else {
-						inspectField(arguments[1],
-								Integer.parseInt(arguments[2]));
-					}
-				} else if (arguments[0].equals("m")) {
-					modify(arguments[1], arguments[2]);
-				} else if (arguments[0].equals("c")) {
-					call(arguments);
-				} else if (arguments[0].equals("n")) {
-					next();
-				} else if (arguments[0].equals("p")) {
-					previous();
-				} else if (arguments[0].equals("s")) {
-					save(arguments[1]);
-				} else if (arguments[0].equals("g")) {
-					get(arguments[1]);
+				} else {
+					this.getClass()
+							.getDeclaredMethod(arguments[0], String[].class)
+							.invoke(this, new Object[] { arguments });
 				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IllegalArgumentException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (SecurityException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (NoSuchFieldException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (InvocationTargetException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InstantiationException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (NoSuchMethodException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -195,20 +141,25 @@ public class Inspector {
 	 *            the number of times you go to the parent level in the class
 	 *            hierarchy.
 	 */
-	private void inspectField(String name, int value) throws SecurityException,
+	@SuppressWarnings("unused")
+	private void i(String input[]) throws SecurityException,
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
-
 		Field field;
-		Class<?> actualClass = object.getClass();
+		Class<?> actualClass = getObjectClass(object);
+		String name = input[1];
 
-		if (value != 0) {
-			for (int i = 0; i < value; i++) {
-				actualClass = actualClass.getClass().getSuperclass();
+		if (object == null || getObjectClass(object).isPrimitive())
+			return;
+
+		if (input.length == 3) {
+			int level = Integer.parseInt(input[2]);
+			for (int i = 0; i < level; i++) {
+				actualClass = actualClass.getSuperclass();
 			}
-			field = actualClass.getField(name);
+			field = getFieldOnClass(name, actualClass);
 		} else {
-			field = getFieldByName(name);
+			field = getFieldInAnyClass(name);
 		}
 
 		if (field != null) {
@@ -216,7 +167,7 @@ public class Inspector {
 			field.setAccessible(true);
 			Object fieldObj = field.get(object);
 			field.setAccessible(originalAcess);
-			setObject(fieldObj, field.getType());
+			updateObject(fieldObj);
 			historyGraph.addToHistory(fieldObj);
 		} else {
 			InfoPrinter.printNullInfo("inspect");
@@ -234,24 +185,31 @@ public class Inspector {
 	 * @param value
 	 *            the new value
 	 */
-	private void modify(String name, String value)
-			throws IllegalArgumentException, IllegalAccessException,
-			SecurityException, NoSuchFieldException, InvocationTargetException,
-			InstantiationException, NoSuchMethodException {
+	@SuppressWarnings("unused")
+	private void m(String input[]) throws IllegalArgumentException,
+			IllegalAccessException, SecurityException, NoSuchFieldException,
+			InvocationTargetException, InstantiationException,
+			NoSuchMethodException {
+		String name = input[1];
+		String value = input[2];
 
-		Field field = getFieldByName(name);
+		if (object == null || getObjectClass(object).isPrimitive())
+			return;
+
+		Field field = getFieldInAnyClass(name);
 
 		if (field != null) {
 			boolean originalAccess = field.isAccessible();
 			field.setAccessible(true);
 
-			if (field.getType().isPrimitive()) {
+			if (field.getType().isPrimitive()
+					|| field.getType() == String.class) {
 				field.set(object, parse(field.getType(), value));
 			} else {
 				field.set(object, value);
 			}
 			field.setAccessible(originalAccess);
-			setObject(object);
+			updateObject(object);
 		} else {
 			InfoPrinter.printNullInfo("modify");
 		}
@@ -267,16 +225,23 @@ public class Inspector {
 	 * @return the field named <i>name</i> or <code>null</code> if it doesn't
 	 *         exists.
 	 */
-	private Field getFieldByName(String name) {
-		Class<?> actualClass = object.getClass();
+	private Field getFieldInAnyClass(String name) {
+		Class<?> actualClass = getObjectClass(object);
+		Field field = null;
 
-		while (actualClass != Object.class) {
-			for (Field f : actualClass.getDeclaredFields())
-				if (f.getName().equals(name)
-						&& !Modifier.isStatic(f.getModifiers())) {
-					return f;
-				}
+		while (actualClass != Object.class && field == null) {
+			field = getFieldOnClass(name, actualClass);
 			actualClass = actualClass.getSuperclass();
+		}
+		return field;
+	}
+
+	private Field getFieldOnClass(String name, Class<?> classWithField) {
+		for (Field f : classWithField.getDeclaredFields()) {
+			if (f.getName().equals(name)
+					&& !Modifier.isStatic(f.getModifiers())) {
+				return f;
+			}
 		}
 		return null;
 	}
@@ -294,21 +259,24 @@ public class Inspector {
 	 * @param input
 	 *            the name of the method and the arguments
 	 */
-	private void call(String input[]) throws IllegalArgumentException,
+	@SuppressWarnings("unused")
+	private void c(String input[]) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException,
 			SecurityException, NoSuchMethodException {
 
-		Object[] methodArgs = new Object[input.length - 2];
+		String name = input[1];
 		String[] inputArgs = new String[input.length - 2];
-		String methodName = input[1];
-		Class<?> actualClass = object.getClass();
+		Object[] methodArgs = new Object[inputArgs.length];
 		Method bestMethod = null;
-
 		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
 
+		if (object == null || getObjectClass(object).isPrimitive())
+			return;
+
+		Class<?> actualClass = getObjectClass(object);
 		while (bestMethod == null && actualClass != Object.class) {
 			bestMethod = filterMethods(actualClass.getDeclaredMethods(),
-					inputArgs, methodName);
+					inputArgs, name);
 			actualClass = actualClass.getSuperclass();
 		}
 
@@ -317,10 +285,6 @@ public class Inspector {
 			return;
 		}
 
-		// ordena os metodos e escolhe o mais compativel
-
-		// fazer a conversao dos argumentos do input conforme
-		// os tipos do metodo que escolheu
 		for (int i = 0; i < bestMethod.getParameterTypes().length; i++) {
 			if (bestMethod.getParameterTypes()[i] == Object.class) {
 				methodArgs[i] = parseObjectType(inputArgs[i]);
@@ -329,7 +293,7 @@ public class Inspector {
 						inputArgs[i]);
 			}
 		}
-		setObject(bestMethod.invoke(object, methodArgs));
+		updateObject(bestMethod.invoke(object, methodArgs));
 		historyGraph.addToHistory(object);
 	}
 
@@ -354,8 +318,6 @@ public class Inspector {
 		Method bestMethod = null;
 		int tempVal = 0;
 
-		// descarta todos os metodos que sejam divergentes no
-		// numero de argumentos ou nome
 		for (Method m : methods) {
 			if (m.getName().equals(name)
 					&& m.getParameterTypes().length == arguments.length
@@ -382,7 +344,6 @@ public class Inspector {
 	 * @return true, if is compatible
 	 */
 	private boolean isCompatible(String arguments[], Class<?> methodArgs[]) {
-
 		boolean result = true;
 
 		for (int i = 0; i < arguments.length; i++) {
@@ -410,22 +371,39 @@ public class Inspector {
 		return value;
 	}
 
-	// TODO JAVADOC
-	private Object parseObjectType(String arg) {
+	/**
+	 * Tries to {@link #parse(Class, String) parse} the <i>argument</i> with
+	 * each primitive type.
+	 * 
+	 * @param argument
+	 *            the value to instantiate the class
+	 * @return the object or null if the parse fails
+	 */
+	private Object parseObjectType(String argument) {
 		Object obj;
 
 		for (Types type : Types.values()) {
-			obj = parse(type.getPrimitive(), arg);
+			obj = parse(type.getPrimitive(), argument);
 			if (obj != null)
 				return obj;
 		}
 		return null;
 	}
 
-	// TODO JAVADOC
-	private Object parse(Class<?> type, String arg) {
+	/**
+	 * Obtains the object that is a instance of the class <i>type</i> with the
+	 * value <i>argument</i>. This is done invoking
+	 * {@link Types#parseArg(Class, String, Map)}.
+	 * 
+	 * @param type
+	 *            the type of the class
+	 * @param argument
+	 *            the value to instantiate the class
+	 * @return the object or null if the parse fails
+	 */
+	private Object parse(Class<?> type, String argument) {
 		try {
-			return Types.parseArg(type, arg, savedObjects);
+			return Types.parseArg(type, argument, savedObjects);
 		} catch (IllegalArgumentException e) {
 		} catch (SecurityException e) {
 		} catch (IllegalAccessException e) {
@@ -440,16 +418,18 @@ public class Inspector {
 	 * Calls the {@link #setObject(Object)} with the next one in the
 	 * {@link #historyGraph}.
 	 */
-	private void next() {
-		setObject(historyGraph.getNext());
+	@SuppressWarnings("unused")
+	private void n(String input[]) {
+		updateObject(historyGraph.getNext());
 	}
 
 	/**
 	 * Calls the {@link #setObject(Object)} with the previous one in the
 	 * {@link #historyGraph}.
 	 */
-	private void previous() {
-		setObject(historyGraph.getPrevious());
+	@SuppressWarnings("unused")
+	private void p(String input[]) {
+		updateObject(historyGraph.getPrevious());
 	}
 
 	/**
@@ -458,7 +438,45 @@ public class Inspector {
 	 * @param name
 	 *            the name that will be associated to the saved object
 	 */
-	private void save(String name) {
+	@SuppressWarnings("unused")
+	private void s(String input[]) {
+		String name = input[1];
 		savedObjects.put(name, object);
+	}
+
+	/**
+	 * Retrieves the current {@link #object}.
+	 * 
+	 * @param name
+	 *            the name that will be associated to the saved object
+	 */
+	@SuppressWarnings("unused")
+	private void g(String input[]) {
+		String name = input[1];
+		updateObject(savedObjects.get(name));
+		historyGraph.addToHistory(object);
+	}
+
+	/**
+	 * Updates the {@link #object}. It checks whether the class type is a Java
+	 * primitive or not in order to print the proper information.
+	 * 
+	 * @param object
+	 *            the object to be set
+	 */
+	private void updateObject(Object object) {
+		this.object = object;
+
+		if (object == null) {
+			InfoPrinter.printObjectInfo(object, null);
+			return;
+		}
+
+		InfoPrinter.printObjectInfo(object, getObjectClass(object)
+				.getCanonicalName());
+
+		if (!getObjectClass(object).isPrimitive()) {
+			InfoPrinter.printStructureInfo(object);
+		}
 	}
 }

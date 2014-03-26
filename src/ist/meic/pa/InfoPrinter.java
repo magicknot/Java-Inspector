@@ -11,18 +11,14 @@ import java.lang.reflect.Modifier;
 public class InfoPrinter {
 
 	public static void printObjectInfo(Object obj, String objectClassName) {
-		// System.out.println(classType);
-
 			System.err.println(obj + " is an instance of " + objectClassName);
-			System.err.println("----------");
-			printStructureInfo(obj);
-
 	}
 
-	private static void printStructureInfo(Object object) {
+	public static void printStructureInfo(Object object) {
 
 		try {
-
+			
+			System.err.println("----------");
 			System.err.println("Attributes:");
 
 			printFieldsInfo(object);
@@ -35,19 +31,14 @@ public class InfoPrinter {
 			printSuperClassesInfo(object);
 
 		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvocationTargetException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -72,21 +63,26 @@ public class InfoPrinter {
 				field.setAccessible(true);
 				Object fieldObj = field.get(object);
 				field.setAccessible(fieldAccess);
+				
+				
+				System.err.print(field.toString());
 
-				if (fieldObj == null)
+				/*if (fieldObj == null){
+					System.err.println(";");
 					continue;
+				}*/
 
-				if (fieldObj.getClass().isArray()) {
+				if (fieldObj != null && fieldObj.getClass().isArray()) {
 
-					System.err.print(field.toString() + " = [ ");
+					System.err.print(" = [ ");
 
 					for (int i = 0; i < Array.getLength(fieldObj); i++) {
 						System.err.print(Array.get(fieldObj, i) + " ");
 					}
-					System.err.println("]");
+					System.err.println("];");
 
 				} else {
-					System.err.println(field.toString() + " = " + fieldObj);
+					System.err.println(" = " + fieldObj+";");
 				}
 
 			}

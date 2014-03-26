@@ -19,7 +19,7 @@
 	</target>
 
 	<target name="compile" depends="clean,init">
-		<javac destdir="${classes.dir}" optimize="true" includeantruntime="false" target="1.6" source="1.6">
+		<javac destdir="${classes.dir}" debug="true" includeantruntime="false" target="1.6" source="1.6">
 			<src>
 				<pathelement path="${src.dir}" />
 			</src>
@@ -29,6 +29,7 @@
 	<target name="create-jar" depends="compile">
 		<jar destfile="./inspector.jar">
 			<fileset dir="${classes.dir}" />
+			<fileset dir="${src.dir}" />
 		</jar>
 	</target>
 
