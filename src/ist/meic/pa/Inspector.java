@@ -104,7 +104,7 @@ public class Inspector {
 		while (true) {
 			System.err.print("> ");
 			try {
-				String arguments[] = buffer.readLine().split(" ");
+				String arguments[] = buffer.readLine().split("(\\s+\")|(\"\\s+)|\"");
 
 				if (arguments[0].equals("q")) {
 					buffer.close();
@@ -201,9 +201,7 @@ public class Inspector {
 		if (field != null) {
 			boolean originalAccess = field.isAccessible();
 			field.setAccessible(true);
-
-			if (field.getType().isPrimitive()
-					|| field.getType() == String.class) {
+			if (field.getType().isPrimitive()) {
 				field.set(object, parse(field.getType(), value));
 			} else {
 				field.set(object, value);

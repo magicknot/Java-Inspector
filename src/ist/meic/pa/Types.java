@@ -60,9 +60,9 @@ public enum Types {
 			return savedObjects.get(arg.substring(1));
 		}
 
-		if (isString(arg)) {
-			return arg.substring(1, arg.length() - 1);
-		}
+		//if (isString(arg)) {
+		//	return arg.substring(1, arg.length() - 1);
+		//}
 
 		if (isPrimitive(c)) {
 			return matches.get(c).newInstance(arg);
@@ -71,9 +71,9 @@ public enum Types {
 		return arg;
 	}
 
-	private static boolean isString(String arg) {
-		return arg.startsWith("\"") && arg.endsWith("\"");
-	}
+	//private static boolean isString(String arg) {
+	//	return arg.startsWith("\"") && arg.endsWith("\"");
+	//}
 
 	private static boolean isChar(String arg) {
 		return arg.startsWith("\'");
