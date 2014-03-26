@@ -57,12 +57,13 @@ public class Inspector {
 	/**
 	 * Inspects a given {@code object}. It is printed its information and the
 	 * {@code object} is added to the {@link #historyGraph}. Finally, it is
-	 * started a REPL.
+	 * started a read-eval-print-loop(REPL).
 	 * 
 	 * @param object
 	 *            the object to be inspected
 	 */
 	public void inspect(Object object) {
+		/** Initializes the enum structure with primitive types information */
 		for (Types type : Types.values()) {
 			Types.init(type.getWrapper(), type.getPrimitive());
 		}
@@ -104,8 +105,10 @@ public class Inspector {
 		while (true) {
 			System.err.print("> ");
 			try {
-				String arguments[] = buffer.readLine().split("(\\s+\")|(\"\\s+)|\"");
+				String arguments[] = buffer.readLine().split(
+						"(\\s+\")|(\"\\s+)|\"");
 
+				/** invokes the name corresponding to command requested **/
 				if (arguments[0].equals("q")) {
 					buffer.close();
 					return;
@@ -152,6 +155,10 @@ public class Inspector {
 		if (object == null || getObjectClass(object).isPrimitive())
 			return;
 
+		/**
+		 * If there are three arguments, we enter shadow mode and look for
+		 * attribute on a specific superclass, otherwise we try all superclasses
+		 */
 		if (input.length == 3) {
 			int level = Integer.parseInt(input[2]);
 			for (int i = 0; i < level; i++) {
@@ -215,8 +222,7 @@ public class Inspector {
 
 	/**
 	 * Gets the field by its <i>name</i>. The field is searched in the current
-	 * class or upwards in the class hierarchy, until the class
-	 * <code>Object</code>, until the field is found.
+	 * class or upwards in the class hierarchy, until the field is found.
 	 * 
 	 * @param name
 	 *            the name of the field to be retrieved
@@ -234,6 +240,17 @@ public class Inspector {
 		return field;
 	}
 
+	/**
+	 * Gets the field by its <i>name</i>. The field is searched in the provided
+	 * class only. The field must not be static
+	 * 
+	 * @param name
+	 *            the name of the field to be retrieved
+	 * @param classWithField
+	 *            the class to search on
+	 * @return the field named <i>name</i> or <code>null</code> if it doesn't
+	 *         exists.
+	 */
 	private Field getFieldOnClass(String name, Class<?> classWithField) {
 		for (Field f : classWithField.getDeclaredFields()) {
 			if (f.getName().equals(name)
@@ -278,10 +295,17 @@ public class Inspector {
 			actualClass = actualClass.getSuperclass();
 		}
 
+		/** no compatible method was found **/
 		if (bestMethod == null) {
 			InfoPrinter.printNullInfo("call");
 			return;
 		}
+
+		/**
+		 * For each method argument, the correspondent input argument is parsed
+		 * to method argument type, or parsed with one compatible type if the
+		 * method argument type is object
+		 */
 
 		for (int i = 0; i < bestMethod.getParameterTypes().length; i++) {
 			if (bestMethod.getParameterTypes()[i] == Object.class) {
@@ -297,10 +321,11 @@ public class Inspector {
 
 	/**
 	 * Filter methods by rejecting all of those who have a different number of
-	 * arguments and/or a different name. The methods must also receive the same
-	 * type of arguments (see {@link #isCompatible(String[], Class[])}). In the
-	 * end, is returned the method with the best classification ( see
-	 * {@link #classifyMethod(Method)}).
+	 * arguments and/or a different name. Methods and corresponding input
+	 * argument type must also be compatible (see
+	 * {@link #isCompatible(String[], Class[])}). In the end, is returned the
+	 * method with the best classification ( see {@link #classifyMethod(Method)}
+	 * ).
 	 * 
 	 * @param methods
 	 *            the methods to be tested
@@ -333,7 +358,9 @@ public class Inspector {
 	}
 
 	/**
-	 * Checks if is compatible. //TODO
+	 * Checks if every argument is compatible with corresponding method
+	 * argument. Compatibility means the argument can be parsed to method type.
+	 * If any argument is incompatible, the result will always be false.
 	 * 
 	 * @param arguments
 	 *            the list of argument
@@ -352,7 +379,9 @@ public class Inspector {
 
 	/**
 	 * The method is classified according to its arguments priority value. To
-	 * calculate this value it is used {@link Types#getPriorityValue(Class)}.
+	 * calculate this value it is used {@link Types#getPriorityValue(Class)}. It
+	 * is assigned a better score for primitive types according to the order
+	 * they appear, and a higher score for any other type.
 	 * 
 	 * @param method
 	 *            the method to be classified
