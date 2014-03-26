@@ -3,6 +3,7 @@ package ist.meic.pa;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.Map;
 
 public enum Types {
 	Integer(int.class, Integer.class), Short(short.class, Short.class), Byte(
@@ -47,7 +48,7 @@ public enum Types {
 	}
 
 	public static Object parseArg(Class<?> c, String arg,
-			SavedObjects savedObjects) throws IllegalArgumentException,
+			Map<String, Object> savedObjects) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException,
 			SecurityException, NoSuchMethodException, InstantiationException {
 
@@ -56,7 +57,7 @@ public enum Types {
 		}
 
 		if (isSaved(arg)) {
-			return savedObjects.getObject(arg.substring(1));
+			return savedObjects.get(arg.substring(1));
 		}
 
 		if (isString(arg)) {
