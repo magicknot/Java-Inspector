@@ -161,14 +161,13 @@ public class Inspector {
 		String name = input[1];
 		String[] inputArgs = new String[input.length - 2];
 		Object[] methodArgs = new Object[inputArgs.length];
-		Class<?> actualClass = getObjectClass(object);
 		Method bestMethod = null;
-
 		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
 
 		if (object == null || getObjectClass(object).isPrimitive())
 			return;
 
+		Class<?> actualClass = getObjectClass(object);
 		while (bestMethod == null && actualClass != Object.class) {
 			bestMethod = filterMethods(actualClass.getDeclaredMethods(),
 					inputArgs, name);
@@ -285,10 +284,15 @@ public class Inspector {
 	private void updateObject(Object obj) {
 		object = obj;
 
+		if (obj == null) {
+			InfoPrinter.printObjectInfo(obj, null);
+			return;
+		}
+
 		InfoPrinter
 				.printObjectInfo(obj, getObjectClass(obj).getCanonicalName());
 
-		if (!getObjectClass(obj).isPrimitive() && obj != null) {
+		if (!getObjectClass(obj).isPrimitive()) {
 			InfoPrinter.printStructureInfo(obj);
 		}
 	}
