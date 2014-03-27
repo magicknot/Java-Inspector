@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 /**
@@ -506,4 +507,29 @@ public class Inspector {
 			InfoPrinter.printStructureInfo(object);
 		}
 	}
+
+	public static String[] inputParse(String string) {
+
+		char lastChar = string.charAt(0);
+		String s = string + " ";
+		boolean insideString = false;
+		String word = "";
+		LinkedList<String> input = new LinkedList<String>();
+
+		for (int i = 0; i < s.length(); i++) {
+			if (s.charAt(i) == '\"') {
+				insideString = !insideString;
+			} else if (s.charAt(i) != ' ' || insideString) {
+				word += s.charAt(i);
+			} else if (s.charAt(i) == ' ' && !insideString && lastChar != ' ') {
+				input.add(word);
+				word = "";
+			}
+
+		}
+
+		return input.toArray(new String[input.size()]);
+
+	}
+
 }
