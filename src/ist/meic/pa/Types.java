@@ -79,7 +79,7 @@ public enum Types {
 		return arg.startsWith("\'");
 	}
 
-	private static boolean isSaved(String arg) {
+	public static boolean isSaved(String arg) {
 		return arg.startsWith("#");
 	}
 

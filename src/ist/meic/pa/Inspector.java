@@ -208,7 +208,7 @@ public class Inspector {
 		if (field != null) {
 			boolean originalAccess = field.isAccessible();
 			field.setAccessible(true);
-			if (field.getType().isPrimitive()) {
+			if (field.getType().isPrimitive() || Types.isSaved(name)) {
 				field.set(object, parse(field.getType(), value));
 			} else {
 				field.set(object, value);
@@ -472,10 +472,10 @@ public class Inspector {
 	}
 
 	/**
-	 * Retrieves the current {@link #object}.
+	 * Retrieves the {@link #object} saved previously.
 	 * 
 	 * @param name
-	 *            the name that will be associated to the saved object
+	 *            the name associated to the saved object
 	 */
 	@SuppressWarnings("unused")
 	private void g(String input[]) {
