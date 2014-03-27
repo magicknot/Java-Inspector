@@ -371,7 +371,7 @@ public class Inspector {
 		boolean result = true;
 
 		for (int i = 0; i < arguments.length; i++) {
-			result = parse(methodArgs[i], arguments[i]) != null && result;
+			result = (parse(methodArgs[i], arguments[i]) != null) && result;
 		}
 		return result;
 	}
@@ -431,7 +431,7 @@ public class Inspector {
 		try {
 
 			for (Types t : Types.values()) {
-				if (t.getWrapper() == t.getWrapper())
+				if (t.getWrapper() == type)
 					return Types.parseArg(t.getPrimitive(), argument,
 							savedObjects);
 			}
