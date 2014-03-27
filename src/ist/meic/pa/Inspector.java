@@ -23,10 +23,10 @@ public class Inspector {
 	private HistoryGraph historyGraph;
 
 	/** The objects saved with the method {@link #save(String)}. */
-	private Map<String, Object> savedObjects;
+	private Map<String, InspectedObject> savedObjects;
 
 	/** The object which is currently in use. */
-	private Object object;
+	private InspectedObject inspObject;
 
 	/** The input reader */
 	private BufferedReader buffer;
@@ -36,23 +36,9 @@ public class Inspector {
 	 */
 	public Inspector() {
 		this.historyGraph = new HistoryGraph();
-		this.savedObjects = new HashMap<String, Object>();
-		this.object = null;
+		this.savedObjects = new HashMap<String, InspectedObject>();
+		this.inspObject = null;
 		this.buffer = null;
-	}
-
-	/**
-	 * Gets the object class.
-	 * 
-	 * @param object
-	 *            the object of the class to be retrieved.
-	 */
-	private Class<?> getObjectClass(Object object) {
-		for (Types type : Types.values()) {
-			if (object.getClass() == type.getWrapper())
-				return type.getPrimitive();
-		}
-		return object.getClass();
 	}
 
 	/**
@@ -69,8 +55,10 @@ public class Inspector {
 			Types.init(type.getWrapper(), type.getPrimitive());
 		}
 
-		updateObject(object);
-		historyGraph.addToHistory(object);
+		InspectedObject obj = new InspectedObject(object);
+
+		updateObject(obj);
+		historyGraph.addToHistory(inspObject);
 		readEvalPrint();
 	}
 
@@ -148,12 +136,16 @@ public class Inspector {
 	private void i(String input[]) throws SecurityException,
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
-		Field field;
-		Class<?> actualClass = getObjectClass(object);
-		String name = input[1];
 
-		if (object == null || getObjectClass(object).isPrimitive())
+		if (inspObject.isNull() || inspObject.isPrimitive()
+				|| input.length != 2) {
+			InfoPrinter.printNothingToDo();
 			return;
+		}
+
+		String name = input[1];
+		Field field = null;
+		Class<?> actualClass = inspObject.getObjectClass();
 
 		/**
 		 * If there are three arguments, we enter shadow mode and look for
@@ -172,10 +164,11 @@ public class Inspector {
 		if (field != null) {
 			boolean originalAcess = field.isAccessible();
 			field.setAccessible(true);
-			Object fieldObj = field.get(object);
+			Object fieldObj = field.get(inspObject.getObject());
 			field.setAccessible(originalAcess);
-			updateObject(fieldObj);
-			historyGraph.addToHistory(fieldObj);
+			InspectedObject obj = new InspectedObject(fieldObj, field.getType());
+			updateObject(obj);
+			historyGraph.addToHistory(inspObject);
 		} else {
 			InfoPrinter.printNullInfo("inspect");
 		}
@@ -197,24 +190,24 @@ public class Inspector {
 			IllegalAccessException, SecurityException, NoSuchFieldException,
 			InvocationTargetException, InstantiationException,
 			NoSuchMethodException {
+
+		if (inspObject.isNull() || inspObject.isPrimitive()
+				|| input.length != 3){
+			InfoPrinter.printNothingToDo();
+			return;
+		}
+			
+
 		String name = input[1];
 		String value = input[2];
-
-		if (object == null || getObjectClass(object).isPrimitive())
-			return;
-
 		Field field = getFieldInAnyClass(name);
 
 		if (field != null) {
 			boolean originalAccess = field.isAccessible();
 			field.setAccessible(true);
-			if (field.getType().isPrimitive()) {
-				field.set(object, parse(field.getType(), value));
-			} else {
-				field.set(object, value);
-			}
+			field.set(inspObject.getObject(), parse(field.getType(), value));
 			field.setAccessible(originalAccess);
-			updateObject(object);
+			updateObject(inspObject);
 		} else {
 			InfoPrinter.printNullInfo("modify");
 		}
@@ -230,7 +223,7 @@ public class Inspector {
 	 *         exists.
 	 */
 	private Field getFieldInAnyClass(String name) {
-		Class<?> actualClass = getObjectClass(object);
+		Class<?> actualClass = inspObject.getObjectClass();
 		Field field = null;
 
 		while (actualClass != Object.class && field == null) {
@@ -278,17 +271,21 @@ public class Inspector {
 	private void c(String input[]) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException,
 			SecurityException, NoSuchMethodException {
-
+		
+		if (inspObject.isNull() || inspObject.isPrimitive()|| input.length < 2){
+			InfoPrinter.printNothingToDo();
+			return;
+		}
+			
 		String name = input[1];
 		String[] inputArgs = new String[input.length - 2];
 		Object[] methodArgs = new Object[inputArgs.length];
 		Method bestMethod = null;
 		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
 
-		if (object == null || getObjectClass(object).isPrimitive())
-			return;
+		
 
-		Class<?> actualClass = getObjectClass(object);
+		Class<?> actualClass = inspObject.getObjectClass();
 		while (bestMethod == null && actualClass != Object.class) {
 			bestMethod = filterMethods(actualClass.getDeclaredMethods(),
 					inputArgs, name);
@@ -315,8 +312,10 @@ public class Inspector {
 						inputArgs[i]);
 			}
 		}
-		updateObject(bestMethod.invoke(object, methodArgs));
-		historyGraph.addToHistory(object);
+
+		updateObject(new InspectedObject(bestMethod.invoke(
+				inspObject.getObject(), methodArgs), bestMethod.getReturnType()));
+		historyGraph.addToHistory(inspObject);
 	}
 
 	/**
@@ -430,6 +429,13 @@ public class Inspector {
 	 */
 	private Object parse(Class<?> type, String argument) {
 		try {
+
+			for (Types t : Types.values()) {
+				if (t.getWrapper() == t.getWrapper())
+					return Types.parseArg(t.getPrimitive(), argument,
+							savedObjects);
+			}
+
 			return Types.parseArg(type, argument, savedObjects);
 		} catch (IllegalArgumentException e) {
 		} catch (SecurityException e) {
@@ -438,6 +444,7 @@ public class Inspector {
 		} catch (NoSuchMethodException e) {
 		} catch (InstantiationException e) {
 		}
+
 		return null;
 	}
 
@@ -467,8 +474,14 @@ public class Inspector {
 	 */
 	@SuppressWarnings("unused")
 	private void s(String input[]) {
+		
+		if(input.length != 2){
+			InfoPrinter.printNothingToDo();
+			return;
+		}
+			
 		String name = input[1];
-		savedObjects.put(name, object);
+		savedObjects.put(name, inspObject);
 	}
 
 	/**
@@ -479,9 +492,15 @@ public class Inspector {
 	 */
 	@SuppressWarnings("unused")
 	private void g(String input[]) {
+		
+		if(input.length != 2){
+			InfoPrinter.printNothingToDo();
+			return;
+		}
+		
 		String name = input[1];
 		updateObject(savedObjects.get(name));
-		historyGraph.addToHistory(object);
+		historyGraph.addToHistory(inspObject);
 	}
 
 	/**
@@ -491,20 +510,10 @@ public class Inspector {
 	 * @param object
 	 *            the object to be set
 	 */
-	private void updateObject(Object object) {
-		this.object = object;
+	private void updateObject(InspectedObject inspectedObject) {
+		this.inspObject = inspectedObject;
 
-		if (object == null) {
-			InfoPrinter.printObjectInfo(object, null);
-			return;
-		}
-
-		InfoPrinter.printObjectInfo(object, getObjectClass(object)
-				.getCanonicalName());
-
-		if (!getObjectClass(object).isPrimitive()) {
-			InfoPrinter.printStructureInfo(object);
-		}
+		InfoPrinter.printObjectInfo(inspectedObject);
 	}
 
 	private String[] inputParse(String string) {
@@ -518,6 +527,7 @@ public class Inspector {
 		for (int i = 0; i < s.length(); i++) {
 			if (s.charAt(i) == '\"') {
 				insideString = !insideString;
+				word += "\"";
 			} else if (s.charAt(i) != ' ' || insideString) {
 				word += s.charAt(i);
 			} else if (s.charAt(i) == ' ' && !insideString && lastChar != ' ') {

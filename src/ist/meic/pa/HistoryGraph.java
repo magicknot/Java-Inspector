@@ -4,19 +4,19 @@ import java.util.ArrayList;
 
 public class HistoryGraph {
 
-	private ArrayList<Object> objects;
+	private ArrayList<InspectedObject> objects;
 	private int historyPointer;
 
 	public HistoryGraph() {
-		objects = new ArrayList<Object>();
+		objects = new ArrayList<InspectedObject>();
 		historyPointer = -1;
 	}
 
-	public ArrayList<Object> getObjects() {
+	public ArrayList<InspectedObject> getObjects() {
 		return objects;
 	}
 
-	public void addToHistory(Object object) {
+	public void addToHistory(InspectedObject object) {
 		if (historyPointer == objects.size() -1) {
 			objects.add(object);
 			historyPointer++;
@@ -26,8 +26,7 @@ public class HistoryGraph {
 		}
 	}
 
-	public Object getNext() {
-		//System.out.println("pointer " + historyPointer + " objects.size " + objects.size());
+	public InspectedObject getNext() {
 		if (historyPointer < objects.size() - 1) {
 			return objects.get(++historyPointer);
 		} else {
@@ -35,7 +34,7 @@ public class HistoryGraph {
 		}
 	}
 
-	public Object getPrevious() {
+	public InspectedObject getPrevious() {
 		if (historyPointer > 0) {
 			return objects.get(--historyPointer);
 		} else {

@@ -48,9 +48,10 @@ public enum Types {
 	}
 
 	public static Object parseArg(Class<?> c, String arg,
-			Map<String, Object> savedObjects) throws IllegalArgumentException,
-			IllegalAccessException, InvocationTargetException,
-			SecurityException, NoSuchMethodException, InstantiationException {
+			Map<String, InspectedObject> savedObjects)
+			throws IllegalArgumentException, IllegalAccessException,
+			InvocationTargetException, SecurityException,
+			NoSuchMethodException, InstantiationException {
 
 		if (isChar(arg) && isPrimitive(c)) {
 			return matches.get(c).newInstance(arg.charAt(1));
@@ -60,9 +61,9 @@ public enum Types {
 			return savedObjects.get(arg.substring(1));
 		}
 
-		//if (isString(arg)) {
-		//	return arg.substring(1, arg.length() - 1);
-		//}
+		if (isString(arg)) {
+			return arg.substring(1, arg.length() - 1);
+		}
 
 		if (isPrimitive(c)) {
 			return matches.get(c).newInstance(arg);
@@ -70,10 +71,6 @@ public enum Types {
 
 		return arg;
 	}
-
-	//private static boolean isString(String arg) {
-	//	return arg.startsWith("\"") && arg.endsWith("\"");
-	//}
 
 	private static boolean isChar(String arg) {
 		return arg.startsWith("\'");
@@ -85,6 +82,10 @@ public enum Types {
 
 	private static boolean isPrimitive(Class<?> c) {
 		return matches.containsKey(c);
+	}
+
+	private static boolean isString(String arg) {
+		return arg.startsWith("\"") && arg.endsWith("\"");
 	}
 
 	public static int getPriorityValue(Class<?> c) {

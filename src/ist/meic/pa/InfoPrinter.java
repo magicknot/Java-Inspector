@@ -10,14 +10,18 @@ import java.lang.reflect.Modifier;
 
 public class InfoPrinter {
 
-	public static void printObjectInfo(Object obj, String objectClassName) {
-			System.err.println(obj + " is an instance of " + objectClassName);
+	public static void printObjectInfo(InspectedObject inspectedObject) {
+		System.err.println(inspectedObject.getObject() + " is an instance of "
+				+ inspectedObject.getName());
+
+		if (!inspectedObject.isPrimitive())
+			printStructureInfo(inspectedObject.getObject());
 	}
 
 	public static void printStructureInfo(Object object) {
 
 		try {
-			
+
 			System.err.println("----------");
 			System.err.println("Attributes:");
 
@@ -63,14 +67,12 @@ public class InfoPrinter {
 				field.setAccessible(true);
 				Object fieldObj = field.get(object);
 				field.setAccessible(fieldAccess);
-				
-				
+
 				System.err.print(field.toString());
 
-				/*if (fieldObj == null){
-					System.err.println(";");
-					continue;
-				}*/
+				/*
+				 * if (fieldObj == null){ System.err.println(";"); continue; }
+				 */
 
 				if (fieldObj != null && fieldObj.getClass().isArray()) {
 
@@ -82,7 +84,7 @@ public class InfoPrinter {
 					System.err.println("];");
 
 				} else {
-					System.err.println(" = " + fieldObj+";");
+					System.err.println(" = " + fieldObj + ";");
 				}
 
 			}
@@ -151,7 +153,7 @@ public class InfoPrinter {
 
 	private static void printSuperClassesInfo(Object object) {
 		Class<?> actualClass = object.getClass().getSuperclass();
-		
+
 		System.err.print("Superclasses: ");
 
 		while (actualClass != Object.class) {
@@ -164,6 +166,12 @@ public class InfoPrinter {
 
 	public static void printNullInfo(String s) {
 		System.err.println(s + ": the object invocated does not exist");
+	}
+
+	public static void printNothingToDo() {
+		System.err
+				.println("Nothing to do here... object is null or has a primitive type or number of arguments is wrong");
+
 	}
 
 }
