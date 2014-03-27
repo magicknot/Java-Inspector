@@ -485,10 +485,10 @@ public class Inspector {
 	}
 
 	/**
-	 * Retrieves the current {@link #object}.
+	 * Retrieves the {@link #object} saved previously.
 	 * 
 	 * @param name
-	 *            the name that will be associated to the saved object
+	 *            the name associated to the saved object
 	 */
 	@SuppressWarnings("unused")
 	private void g(String input[]) {
