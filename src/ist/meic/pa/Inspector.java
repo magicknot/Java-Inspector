@@ -106,8 +106,7 @@ public class Inspector {
 		while (true) {
 			System.err.print("> ");
 			try {
-				String arguments[] = buffer.readLine().split(
-						"(\\s+\")|(\"\\s+)|\"");
+				String arguments[] = inputParse(buffer.readLine());
 
 				/** invokes the name corresponding to command requested **/
 				if (arguments[0].equals("q")) {
@@ -508,7 +507,7 @@ public class Inspector {
 		}
 	}
 
-	public static String[] inputParse(String string) {
+	private String[] inputParse(String string) {
 
 		char lastChar = string.charAt(0);
 		String s = string + " ";
