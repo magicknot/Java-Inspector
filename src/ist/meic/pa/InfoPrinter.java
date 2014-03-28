@@ -26,7 +26,7 @@ public class InfoPrinter {
 		System.err.println(inspectedObject.getObject() + " is an instance of "
 				+ inspectedObject.getName());
 
-		if (!inspectedObject.isPrimitive())
+		if (!inspectedObject.isPrimitive() || inspectedObject.isNull())
 			printStructureInfo(inspectedObject.getObject());
 	}
 
