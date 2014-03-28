@@ -156,7 +156,7 @@ public class Inspector {
 		 */
 		if (input.length == 3) {
 			int level = Integer.parseInt(input[2]);
-			for (int i = 0; i < level; i++) {
+			for (int i = 0; i < level && actualClass != Object.class; i++) {
 				actualClass = actualClass.getSuperclass();
 			}
 			field = getFieldOnClass(name, actualClass);
