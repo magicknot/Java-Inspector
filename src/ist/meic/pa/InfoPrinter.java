@@ -8,8 +8,20 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+/**
+ * This class is responsible for printing object information
+ */
+
 public class InfoPrinter {
 
+	/**
+	 * 
+	 * If the object class is a primitive type, only the name of the object is
+	 * printed, otherwise several other kinds of information are printed
+	 * 
+	 * @param inspectedObject
+	 *            - the object with information to print
+	 */
 	public static void printObjectInfo(InspectedObject inspectedObject) {
 		System.err.println(inspectedObject.getObject() + " is an instance of "
 				+ inspectedObject.getName());
@@ -18,6 +30,13 @@ public class InfoPrinter {
 			printStructureInfo(inspectedObject.getObject());
 	}
 
+	/**
+	 * Prints object information about annotations, constructors, implemented
+	 * interfaces, methods, superclasses
+	 * 
+	 * @param object
+	 *            - the object with information to print
+	 */
 	public static void printStructureInfo(Object object) {
 
 		try {
@@ -48,6 +67,18 @@ public class InfoPrinter {
 
 	}
 
+	/**
+	 * Prints object information about fields
+	 * 
+	 * @param object
+	 *            - the object with information to print
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 * @throws InvocationTargetException
+	 */
+
 	private static void printFieldsInfo(Object object)
 			throws IllegalArgumentException, IllegalAccessException,
 			SecurityException, NoSuchMethodException, InvocationTargetException {
@@ -70,10 +101,6 @@ public class InfoPrinter {
 
 				System.err.print(field.toString());
 
-				/*
-				 * if (fieldObj == null){ System.err.println(";"); continue; }
-				 */
-
 				if (fieldObj != null && fieldObj.getClass().isArray()) {
 
 					System.err.print(" = [ ");
@@ -95,6 +122,12 @@ public class InfoPrinter {
 
 	}
 
+	/**
+	 * Prints object information about annotations
+	 * 
+	 * @param annotations
+	 *            - list of object annotations to print
+	 */
 	private static void printAnnotationsInfo(Annotation[] annotations) {
 		System.err.print("Annotations: ");
 
@@ -108,6 +141,13 @@ public class InfoPrinter {
 
 		System.err.println();
 	}
+
+	/**
+	 * Prints object information about constructors
+	 * 
+	 * @param constructors
+	 *            - list of object constructors to print
+	 */
 
 	private static void printConstructorsInfo(Constructor<?>[] constructors) {
 		System.err.print("Constructors: ");
@@ -123,6 +163,13 @@ public class InfoPrinter {
 		System.err.println();
 	}
 
+	/**
+	 * Prints object information about implemented interfaces
+	 * 
+	 * @param interfaces
+	 *            - list of interfaces to print
+	 */
+
 	private static void printInterfacesInfo(Class<?>[] interfaces) {
 		System.err.print("Interfaces: ");
 
@@ -136,6 +183,13 @@ public class InfoPrinter {
 
 		System.err.println();
 	}
+
+	/**
+	 * Prints object information about methods
+	 * 
+	 * @param methods
+	 *            - list of object methods
+	 */
 
 	private static void printMethodsInfo(Method[] methods) {
 		System.err.print("Methods: ");
@@ -151,6 +205,12 @@ public class InfoPrinter {
 		System.err.println();
 	}
 
+	/**
+	 * Prints object information about superclasses
+	 * 
+	 * @param object
+	 */
+
 	private static void printSuperClassesInfo(Object object) {
 		Class<?> actualClass = object.getClass().getSuperclass();
 
@@ -164,9 +224,20 @@ public class InfoPrinter {
 		System.err.println(actualClass);
 	}
 
+	/**
+	 * Message to be printed when object doesn't exist
+	 * 
+	 * @param s
+	 *            - object name
+	 */
+
 	public static void printNullInfo(String s) {
-		System.err.println(s + ": the object invocated does not exist");
+		System.err.println(s + ": the object invoked does not exist");
 	}
+
+	/**
+	 * Message to be printed when a command can't be executed
+	 */
 
 	public static void printNothingToDo() {
 		System.err
