@@ -26,7 +26,7 @@ public class InfoPrinter {
 		System.err.println(inspectedObject.getObject() + " is an instance of "
 				+ inspectedObject.getName());
 
-		if (!inspectedObject.isPrimitive() || inspectedObject.isNull())
+		if (!inspectedObject.isPrimitive() && !inspectedObject.isNull())
 			printStructureInfo(inspectedObject.getObject());
 	}
 
@@ -249,6 +249,12 @@ public class InfoPrinter {
 			String argType) {
 		System.err.println(objectName + " field of type " + argType
 				+ " couldn't be assigned with value " + argName);
+	}
+	
+	public static void printCommandNotFound(String command) {
+		System.err
+				.println("Command " + command + " not found");
+
 	}
 
 }

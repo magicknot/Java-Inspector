@@ -90,11 +90,13 @@ public class Inspector {
 	 */
 	private void readEvalPrint() {
 		buffer = new BufferedReader(new InputStreamReader(System.in));
+		String arguments[] = null;
 
 		while (true) {
 			System.err.print("> ");
+
 			try {
-				String arguments[] = inputParse(buffer.readLine());
+				arguments = inputParse(buffer.readLine());
 
 				/** invokes the name corresponding to command requested **/
 				if (arguments[0].equals("q")) {
@@ -117,7 +119,7 @@ public class Inspector {
 			} catch (InvocationTargetException e) {
 				e.printStackTrace();
 			} catch (NoSuchMethodException e) {
-				e.printStackTrace();
+				InfoPrinter.printCommandNotFound(arguments[0]);
 			}
 		}
 	}
