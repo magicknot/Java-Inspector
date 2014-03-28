@@ -105,7 +105,8 @@ public enum Types {
 		}
 
 		if (isSaved(arg)) {
-			return savedObjects.get(arg.substring(1)).getObject();
+			return parseArg(c, savedObjects.get(arg.substring(1)).getObject()
+					.toString(), savedObjects);
 		}
 
 		if (isPrimitive(c)) {
