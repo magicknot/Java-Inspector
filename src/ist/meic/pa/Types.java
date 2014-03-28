@@ -96,21 +96,24 @@ public enum Types {
 			InvocationTargetException, SecurityException,
 			NoSuchMethodException, InstantiationException {
 
-		if (isChar(arg) && isPrimitive(c)) {
-			return matches.get(c).newInstance(
-					arg.substring(1, arg.length() - 1));
+		if (isChar(arg)) {
+			if (isPrimitive(c) && arg.length() - 2 != 0) {
+				return matches.get(c).newInstance(arg.charAt(1));
+			} else {
+				arg = arg.substring(1, arg.length() - 1);
+			}
 		}
 
 		if (isSaved(arg)) {
 			return savedObjects.get(arg.substring(1)).getObject();
 		}
 
-		if (isString(arg)) {
-			return arg.substring(1, arg.length() - 1);
-		}
-
 		if (isPrimitive(c)) {
 			return matches.get(c).newInstance(arg);
+		}
+
+		if (isString(arg)) {
+			return arg.substring(1, arg.length() - 1);
 		}
 
 		return arg;
@@ -124,7 +127,7 @@ public enum Types {
 	 * @return - true or false
 	 */
 	private static boolean isChar(String arg) {
-		return arg.startsWith("\'") && arg.endsWith("\'");
+		return arg.startsWith("\'") && arg.endsWith("\'") && arg.length() == 3;
 	}
 
 	/**
