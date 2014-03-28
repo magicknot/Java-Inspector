@@ -245,4 +245,10 @@ public class InfoPrinter {
 
 	}
 
+	public static void printNoAssignMessage(String objectName, String argName,
+			String argType) {
+		System.err.println(objectName + " field of type " + argType
+				+ " couldn't be assigned with value " + argName);
+	}
+
 }

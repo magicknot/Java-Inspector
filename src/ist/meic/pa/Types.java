@@ -97,11 +97,12 @@ public enum Types {
 			NoSuchMethodException, InstantiationException {
 
 		if (isChar(arg) && isPrimitive(c)) {
-			return matches.get(c).newInstance(arg.charAt(1));
+			return matches.get(c).newInstance(
+					arg.substring(1, arg.length() - 1));
 		}
 
 		if (isSaved(arg)) {
-			return savedObjects.get(arg.substring(1));
+			return savedObjects.get(arg.substring(1)).getObject();
 		}
 
 		if (isString(arg)) {
@@ -123,7 +124,7 @@ public enum Types {
 	 * @return - true or false
 	 */
 	private static boolean isChar(String arg) {
-		return arg.startsWith("\'");
+		return arg.startsWith("\'") && arg.endsWith("\'");
 	}
 
 	/**

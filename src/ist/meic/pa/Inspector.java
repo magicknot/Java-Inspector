@@ -105,6 +105,7 @@ public class Inspector {
 							.getDeclaredMethod(arguments[0], String[].class)
 							.invoke(this, new Object[] { arguments });
 				}
+
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (IllegalArgumentException e) {
@@ -137,8 +138,8 @@ public class Inspector {
 			NoSuchFieldException, IllegalArgumentException,
 			IllegalAccessException, InstantiationException {
 
-		if (inspObject.isNull() || inspObject.isPrimitive()
-				|| input.length < 2 || input.length > 3) {
+		if (inspObject.isNull() || inspObject.isPrimitive() || input.length < 2
+				|| input.length > 3) {
 			InfoPrinter.printNothingToDo();
 			return;
 		}
@@ -186,10 +187,7 @@ public class Inspector {
 	 *            the new value
 	 */
 	@SuppressWarnings("unused")
-	private void m(String input[]) throws IllegalArgumentException,
-			IllegalAccessException, SecurityException, NoSuchFieldException,
-			InvocationTargetException, InstantiationException,
-			NoSuchMethodException {
+	private void m(String input[]) {
 
 		if (inspObject.isNull() || inspObject.isPrimitive()
 				|| input.length != 3) {
@@ -201,15 +199,25 @@ public class Inspector {
 		String value = input[2];
 		Field field = getFieldInAnyClass(name);
 
-		if (field != null) {
-			boolean originalAccess = field.isAccessible();
-			field.setAccessible(true);
-			field.set(inspObject.getObject(), parse(field.getType(), value));
-			field.setAccessible(originalAccess);
-			updateObject(inspObject);
-		} else {
-			InfoPrinter.printNullInfo("modify");
+		try {
+
+			if (field != null) {
+				boolean originalAccess = field.isAccessible();
+				field.setAccessible(true);
+				field.set(inspObject.getObject(), parse(field.getType(), value));
+				field.setAccessible(originalAccess);
+				updateObject(inspObject);
+			} else {
+				InfoPrinter.printNullInfo("modify");
+			}
+
+			return;
+
+		} catch (IllegalArgumentException e) {
+		} catch (IllegalAccessException e) {
 		}
+		InfoPrinter.printNoAssignMessage(inspObject.getObject().toString(),
+				value, field.getType().getName());
 	}
 
 	/**
