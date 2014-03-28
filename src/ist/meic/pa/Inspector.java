@@ -138,7 +138,7 @@ public class Inspector {
 			IllegalAccessException, InstantiationException {
 
 		if (inspObject.isNull() || inspObject.isPrimitive()
-				|| input.length != 2) {
+				|| input.length < 2 || input.length > 3) {
 			InfoPrinter.printNothingToDo();
 			return;
 		}
@@ -192,11 +192,10 @@ public class Inspector {
 			NoSuchMethodException {
 
 		if (inspObject.isNull() || inspObject.isPrimitive()
-				|| input.length != 3){
+				|| input.length != 3) {
 			InfoPrinter.printNothingToDo();
 			return;
 		}
-			
 
 		String name = input[1];
 		String value = input[2];
@@ -271,19 +270,17 @@ public class Inspector {
 	private void c(String input[]) throws IllegalArgumentException,
 			IllegalAccessException, InvocationTargetException,
 			SecurityException, NoSuchMethodException {
-		
-		if (inspObject.isNull() || inspObject.isPrimitive()|| input.length < 2){
+
+		if (inspObject.isNull() || inspObject.isPrimitive() || input.length < 2) {
 			InfoPrinter.printNothingToDo();
 			return;
 		}
-			
+
 		String name = input[1];
 		String[] inputArgs = new String[input.length - 2];
 		Object[] methodArgs = new Object[inputArgs.length];
 		Method bestMethod = null;
 		System.arraycopy(input, 2, inputArgs, 0, inputArgs.length);
-
-		
 
 		Class<?> actualClass = inspObject.getObjectClass();
 		while (bestMethod == null && actualClass != Object.class) {
@@ -474,12 +471,12 @@ public class Inspector {
 	 */
 	@SuppressWarnings("unused")
 	private void s(String input[]) {
-		
-		if(input.length != 2){
+
+		if (input.length != 2) {
 			InfoPrinter.printNothingToDo();
 			return;
 		}
-			
+
 		String name = input[1];
 		savedObjects.put(name, inspObject);
 	}
@@ -492,12 +489,12 @@ public class Inspector {
 	 */
 	@SuppressWarnings("unused")
 	private void g(String input[]) {
-		
-		if(input.length != 2){
+
+		if (input.length != 2) {
 			InfoPrinter.printNothingToDo();
 			return;
 		}
-		
+
 		String name = input[1];
 		updateObject(savedObjects.get(name));
 		historyGraph.addToHistory(inspObject);
